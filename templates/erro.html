@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Erro - DK Electric Help{% endblock %}
+{% block content %}
+<div class="error-page">
+  <div class="error-card">
+    <div class="error-icon">!</div>
+    <h1>Ops!</h1>
+    <p>{{ mensagem }}</p>
+    <a href="/" class="btn-primary">Voltar ao Inicio</a>
+  </div>
+</div>
+{% endblock %}

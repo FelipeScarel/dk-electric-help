@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Agendar Servico - DK Electric Help{% endblock %}
+{% block content %}
+<div class="schedule-page">
+  <div class="schedule-header">
+    <h1>Agendar Servico</h1>
+    <div class="orcamento-ref">Orcamento {{ orcamento.hash_id }}</div>
+    <p>Selecione a data e horario para execucao do servico.</p>
+  </div>
+
+  <div class="schedule-grid">
+    <div class="calendar-panel">
+      <h3>Horarios Disponiveis</h3>
+      <div class="slots-list" id="slots-list">
+        {% if slots %}
+          {% set prev_day = '' %}
+          {% for slot in slots %}
+            {% set day_str = slot.data.strftime('%d/%m/%Y - %A') %}
+            {% if day_str != prev_day %}
+              <div class="day-header">{{ day_str }}</div>
+            {% endif %}
+            <div class="slot-card"
+                 data-slot-id="{{ slot.id }}"
+                 data-date="{{ slot.data.isoformat() }}"
+                 data-time="{{ slot.hora_inicio.strftime('%H:%M') }} - {{ slot.hora_fim.strftime('%H:%M') }}"
+                 onclick="selectSlot(this)">
+              <span class="slot-date">{{ slot.data.strftime('%d/%m') }}</span>
+              <span class="slot-time">{{ slot.hora_inicio.strftime('%H:%M') }} - {{ slot.hora_fim.strftime('%H:%M') }}</span>
+            </div>
+            {% set prev_day = day_str %}
+          {% endfor %}
+        {% else %}
+          <div class="no-slots">Nenhum horario disponivel no momento. Entre em contato: {{ config.COMPANY_PHONE }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="resumo-panel">
+      <h3>Resumo do Orcamento</h3>
+      <div class="resumo-item">
+        <span class="resumo-label">Cliente</span>
+        <span class="resumo-value">{{ orcamento.cliente.nome }}</span>
+      </div>
+      <div class="resumo-item">
+        <span class="resumo-label">Endereco</span>
+        <span class="resumo-value">{{ orcamento.cliente.endereco }}</span>
+      </div>
+      <div class="resumo-item">
+        <span class="resumo-label">Cidade</span>
+        <span class="resumo-value">{{ orcamento.cliente.cidade }}</span>
+      </div>
+      <div class="resumo-item">
+        <span class="resumo-label">Validade</span>
+        <span class="resumo-value">{{ orcamento.data_validade.strftime('%d/%m/%Y') }}</span>
+      </div>
+      <div class="resumo-total">R$ {{ "%.2f"|format(orcamento.valor_total) }}</div>
+
+      <div class="selected-info" id="selected-info" style="display:none;">
+        Selecionado: <span id="selected-date-text"></span>
+      </div>
+
+      <button class="btn-confirmar" id="btn-confirmar" disabled
+              data-hash="{{ orcamento.hash_id }}">
+        Confirmar Agendamento
+      </button>
+
+      <div class="schedule-message" id="schedule-message"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  var selectedSlotId = null;
+
+  window.selectSlot = function (el) {
+    document.querySelectorAll('.slot-card').forEach(function (c) { c.classList.remove('selected'); });
+    el.classList.add('selected');
+    selectedSlotId = el.getAttribute('data-slot-id');
+    document.getElementById('selected-date-text').textContent =
+      el.getAttribute('data-date') + ' ' + el.getAttribute('data-time');
+    document.getElementById('selected-info').style.display = 'block';
+    document.getElementById('btn-confirmar').disabled = false;
+  };
+
+  document.getElementById('btn-confirmar').addEventListener('click', function () {
+    if (!selectedSlotId) return;
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Confirmando...';
+    var msgEl = document.getElementById('schedule-message');
+    msgEl.className = 'schedule-message';
+    msgEl.style.display = 'none';
+
+    fetch('/api/agendar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        hash_id: btn.getAttribute('data-hash'),
+        slot_id: parseInt(selectedSlotId)
+      })
+    })
+    .then(function (r) { return r.json().then(function (d) { return { status: r.status, body: d }; }); })
+    .then(function (result) {
+      if (result.status === 200) {
+        window.location.href = '/agendamento-confirmado?hash_id=' + btn.getAttribute('data-hash');
+      } else {
+        msgEl.className = 'schedule-message error';
+        msgEl.textContent = result.body.error || 'Erro ao confirmar.';
+        msgEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Confirmar Agendamento';
+      }
+    })
+    .catch(function () {
+      msgEl.className = 'schedule-message error';
+      msgEl.textContent = 'Erro de conexao. Tente novamente.';
+      msgEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Confirmar Agendamento';
+    });
+  });
+})();
+</script>
+{% endblock %}
