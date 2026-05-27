@@ -118,7 +118,14 @@
       body: JSON.stringify(payload),
     })
       .then(function (r) {
-        if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || "Erro " + r.status); });
+        if (!r.ok) {
+          // Tenta extrair erro como JSON; se falhar, devolve o status HTTP
+          var ct = r.headers.get("Content-Type") || "";
+          if (ct.indexOf("application/json") !== -1) {
+            return r.json().then(function (d) { throw new Error(d.error || "Erro " + r.status); });
+          }
+          throw new Error("Erro do servidor (HTTP " + r.status + "). Tente novamente.");
+        }
         return r.json();
       })
       .then(function (data) {

@@ -42,7 +42,24 @@
       "PowerShell(& \"$env:USERPROFILE\\\\cloudflared.exe\" tunnel --url http://localhost:5000 2>&1)",
       "Bash(curl -s http://127.0.0.1:5000/health)",
       "Bash(git init *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(gh --version)",
+      "PowerShell(winget install --id GitHub.cli --silent --accept-package-agreements --accept-source-agreements 2>&1)",
+      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue | Select-Object Source; if \\(-not \\(Get-Command gh -ErrorAction SilentlyContinue\\)\\) { Write-Host \"Not found, trying alternative install...\"; Invoke-WebRequest -Uri \"https://github.com/cli/cli/releases/download/v2.70.0/gh_2.70.0_windows_amd64.msi\" -OutFile \"$env:TEMP\\\\gh-cli.msi\"; Start-Process msiexec.exe -Wait -ArgumentList \"/i `\"$env:TEMP\\\\gh-cli.msi`\" /quiet\"; Write-Host \"MSI install finished\" })",
+      "PowerShell($ghPath = \"${env:ProgramFiles}\\\\GitHub CLI\\\\gh.exe\"; if \\(Test-Path $ghPath\\) { Write-Host \"Found: $ghPath\"; & $ghPath --version } else { Write-Host \"Checking other locations...\"; Get-ChildItem \"${env:ProgramFiles}\\\\GitHub CLI\" -ErrorAction SilentlyContinue; Get-ChildItem \"${env:LOCALAPPDATA}\\\\Programs\\\\GitHub CLI\" -ErrorAction SilentlyContinue })",
+      "PowerShell($zipPath = \"$env:TEMP\\\\gh.zip\"; $extractPath = \"$env:USERPROFILE\\\\gh-cli\"; Invoke-WebRequest -Uri \"https://github.com/cli/cli/releases/download/v2.70.0/gh_2.70.0_windows_amd64.zip\" -OutFile $zipPath; Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force; $ghExe = Get-ChildItem -Path $extractPath -Recurse -Name \"gh.exe\" | Select-Object -First 1; Write-Host \"gh.exe found at: $extractPath\\\\$ghExe\"; & \"$extractPath\\\\$ghExe\" --version)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(curl -s -X POST http://127.0.0.1:5000/api/orcamentos -H 'Content-Type: application/json' -d '{\"nome\":\"Teste Cliente\",\"telefone\":\"1199999999\",\"endereco\":\"Rua Teste 123\",\"cidade\":\"Sao Paulo\",\"itens\":[{\"descricao\":\"Servico de instalacao eletrica\",\"quantidade\":1,\"valor_unitario\":150.00}]}')",
+      "Bash(curl -s -o \"C:\\\\Users\\\\felip\\\\SISTEMA DK\\\\teste.pdf\" -w \"HTTP %{http_code}, Size: %{size_download} bytes\" http://127.0.0.1:5000/pdf/B4FF688F7EA9)",
+      "Bash(curl -s -X POST http://127.0.0.1:5000/api/orcamentos -H \"Content-Type: application/json\" -d '{\"nome\":\"Teste\",\"telefone\":\"1199999999\",\"endereco\":\"Rua X\",\"cidade\":\"SP\",\"validade_dias\":15,\"observacoes\":\"\",\"itens\":[{\"item\":\"1\",\"descricao\":\"Teste\",\"quantidade\":1,\"valor_unitario\":100}]}')",
+      "Bash(curl -s -X POST https://unlike-impact-housewives-telling.trycloudflare.com/api/orcamentos -H \"Content-Type: application/json\" -d '{\"nome\":\"Teste Cliente\",\"telefone\":\"1199999999\",\"endereco\":\"Rua Teste 123\",\"cidade\":\"Sao Paulo\",\"itens\":[{\"descricao\":\"Instalacao eletrica\",\"quantidade\":1,\"valor_unitario\":150}]}')",
+      "Bash(curl -s -o nul -w \"HTTP %{http_code}, Size: %{size_download}\" \"https://unlike-impact-housewives-telling.trycloudflare.com/pdf/D0DBB8636BD6\")",
+      "Bash('c:/Users/felip/SISTEMA DK/venv/Scripts/python.exe' -c ' *)",
+      "Bash(curl -s -X POST https://unlike-impact-housewives-telling.trycloudflare.com/api/orcamentos -H \"Content-Type: application/json\" -d '{\"nome\":\"Teste HTTPS\",\"telefone\":\"1199999999\",\"endereco\":\"Rua Teste 123\",\"cidade\":\"Sao Paulo\",\"itens\":[{\"descricao\":\"Instalacao eletrica\",\"quantidade\":1,\"valor_unitario\":150}]}')",
+      "Bash(curl -sI https://unlike-impact-housewives-telling.trycloudflare.com/health)",
+      "Bash(curl -s -o \"C:\\\\Users\\\\felip\\\\SISTEMA DK\\\\teste_https.pdf\" \"https://unlike-impact-housewives-telling.trycloudflare.com/pdf/06AB7E434306\")"
     ]
   }
 }

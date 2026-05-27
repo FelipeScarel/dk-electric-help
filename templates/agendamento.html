@@ -102,7 +102,13 @@
         slot_id: parseInt(selectedSlotId)
       })
     })
-    .then(function (r) { return r.json().then(function (d) { return { status: r.status, body: d }; }); })
+    .then(function (r) {
+      var ct = r.headers.get('Content-Type') || '';
+      if (ct.indexOf('application/json') !== -1) {
+        return r.json().then(function (d) { return { status: r.status, body: d }; });
+      }
+      throw new Error('Erro do servidor (HTTP ' + r.status + '). Tente novamente.');
+    })
     .then(function (result) {
       if (result.status === 200) {
         window.location.href = '/agendamento-confirmado?hash_id=' + btn.getAttribute('data-hash');
@@ -114,9 +120,9 @@
         btn.textContent = 'Confirmar Agendamento';
       }
     })
-    .catch(function () {
+    .catch(function (err) {
       msgEl.className = 'schedule-message error';
-      msgEl.textContent = 'Erro de conexao. Tente novamente.';
+      msgEl.textContent = err.message || 'Erro de conexao. Tente novamente.';
       msgEl.style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Confirmar Agendamento';

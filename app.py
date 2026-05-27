@@ -24,6 +24,13 @@ def create_app():
     return app
 
 
+def _get_base_url():
+    """Retorna a URL base correta, respeitando proxy HTTPS (Cloudflare Tunnel, Render, etc)."""
+    scheme = request.headers.get("X-Forwarded-Proto", "http")
+    host = request.host
+    return f"{scheme}://{host}/"
+
+
 app = create_app()
 
 
@@ -99,7 +106,7 @@ def criar_orcamento():
     orcamento.recalcular_total()
     db.session.commit()
 
-    pdf_path = generate_orcamento_pdf(orcamento, base_url=request.host_url)
+    pdf_path = generate_orcamento_pdf(orcamento, base_url=_get_base_url())
 
     return jsonify(
         {
@@ -317,7 +324,7 @@ def criar_revisao(hash_id):
         db.session.add(novo_item)
 
     db.session.commit()
-    generate_orcamento_pdf(revisao, base_url=request.host_url)
+    generate_orcamento_pdf(revisao, base_url=_get_base_url())
 
     return jsonify(
         {
