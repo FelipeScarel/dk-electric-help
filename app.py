@@ -18,6 +18,11 @@ from database import (
 from pdf_generator import generate_orcamento_pdf
 
 
+def _utcnow():
+    """Retorna datetime UTC naive (sem tzinfo), compativel com o banco SQLite."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -100,8 +105,8 @@ def criar_orcamento():
     validade_dias = int(data.get("validade_dias", Config.PROPOSAL_VALIDITY_DAYS))
     orcamento = Orcamento(
         cliente_id=cliente.id,
-        data_emissao=datetime.now(timezone.utc),
-        data_validade=datetime.now(timezone.utc) + timedelta(days=validade_dias),
+        data_emissao=_utcnow(),
+        data_validade=_utcnow() + timedelta(days=validade_dias),
         observacoes=data.get("observacoes", "").strip(),
     )
     db.session.add(orcamento)
@@ -173,7 +178,7 @@ def validar_orcamento():
     if orcamento.status == "CANCELADO":
         return render_template("erro.html", mensagem="Este orcamento foi cancelado."), 410
 
-    if orcamento.data_validade < datetime.now(timezone.utc) and orcamento.status == "PENDENTE":
+    if orcamento.data_validade < _utcnow() and orcamento.status == "PENDENTE":
         return render_template(
             "erro.html",
             mensagem="Este orcamento expirou. Entre em contato para renova-lo.",
@@ -181,7 +186,7 @@ def validar_orcamento():
 
     if orcamento.status == "PENDENTE":
         orcamento.status = "APROVADO_PELO_CLIENTE"
-        orcamento.atualizado_em = datetime.now(timezone.utc)
+        orcamento.atualizado_em = _utcnow()
         db.session.commit()
 
     if orcamento.status == "AGENDADO" and orcamento.agendamento:
@@ -195,7 +200,7 @@ def validar_orcamento():
         SlotHorario.query
         .filter(
             SlotHorario.disponivel == True,
-            SlotHorario.data >= datetime.now(timezone.utc).date(),
+            SlotHorario.data >= _utcnow().date(),
         )
         .order_by(SlotHorario.data, SlotHorario.hora_inicio)
         .limit(90)
@@ -215,43 +220,50 @@ def validar_orcamento():
 
 @app.route("/api/agendar", methods=["POST"])
 def confirmar_agendamento():
-    data = request.get_json(force=True)
+    try:
+        data = request.get_json(force=True)
 
-    hash_id = data.get("hash_id", "").strip().upper()
-    slot_id = data.get("slot_id")
+        hash_id = data.get("hash_id", "").strip().upper()
+        slot_id = data.get("slot_id")
 
-    if not hash_id or not slot_id:
-        return jsonify({"error": "Dados incompletos."}), 400
+        if not hash_id or not slot_id:
+            return jsonify({"error": "Dados incompletos."}), 400
 
-    orcamento = Orcamento.query.filter_by(hash_id=hash_id).first()
-    if not orcamento:
-        return jsonify({"error": "Orcamento nao encontrado."}), 404
+        orcamento = Orcamento.query.filter_by(hash_id=hash_id).first()
+        if not orcamento:
+            return jsonify({"error": "Orcamento nao encontrado."}), 404
 
-    slot = SlotHorario.query.get(slot_id)
-    if not slot or not slot.disponivel:
-        return jsonify({"error": "Horario indisponivel. Escolha outro."}), 409
+        slot = SlotHorario.query.get(slot_id)
+        if not slot or not slot.disponivel:
+            return jsonify({"error": "Horario indisponivel. Escolha outro."}), 409
 
-    slot.disponivel = False
-    agendamento = Agendamento(
-        orcamento_id=orcamento.id,
-        data_agendada=datetime.combine(slot.data, slot.hora_inicio),
-        periodo=f"{slot.hora_inicio.strftime('%H:%M')} - {slot.hora_fim.strftime('%H:%M')}",
-        observacoes_cliente=data.get("observacoes", ""),
-    )
-    db.session.add(agendamento)
-    db.session.flush()
-    slot.agendamento_id = agendamento.id
-    orcamento.status = "AGENDADO"
-    orcamento.atualizado_em = datetime.now(timezone.utc)
-    db.session.commit()
+        slot.disponivel = False
+        agendamento = Agendamento(
+            orcamento_id=orcamento.id,
+            data_agendada=datetime.combine(slot.data, slot.hora_inicio),
+            periodo=f"{slot.hora_inicio.strftime('%H:%M')} - {slot.hora_fim.strftime('%H:%M')}",
+            observacoes_cliente=data.get("observacoes", ""),
+        )
+        db.session.add(agendamento)
+        db.session.flush()
+        slot.agendamento_id = agendamento.id
+        orcamento.status = "AGENDADO"
+        orcamento.atualizado_em = _utcnow()
+        db.session.commit()
 
-    return jsonify(
-        {
-            "status": "ok",
-            "agendamento": agendamento.to_dict(),
-            "redirect": url_for("agendamento_confirmado", hash_id=hash_id, _external=True),
-        }
-    )
+        return jsonify(
+            {
+                "status": "ok",
+                "agendamento": agendamento.to_dict(),
+                "redirect": url_for("agendamento_confirmado", hash_id=hash_id, _external=True),
+            }
+        )
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(f"AGENDAR ERROR: {tb}", flush=True)
+        app.logger.error(f"AGENDAR ERROR: {tb}")
+        db.session.rollback()
+        return jsonify({"error": f"Erro ao agendar: {str(e)}"}), 500
 
 
 @app.route("/agendamento-confirmado")
@@ -275,7 +287,7 @@ def api_slots_disponiveis():
         SlotHorario.query
         .filter(
             SlotHorario.disponivel == True,
-            SlotHorario.data >= datetime.now(timezone.utc).date(),
+            SlotHorario.data >= _utcnow().date(),
         )
         .order_by(SlotHorario.data, SlotHorario.hora_inicio)
         .limit(120)
@@ -321,8 +333,8 @@ def criar_revisao(hash_id):
     validade_dias = Config.PROPOSAL_VALIDITY_DAYS
     revisao = Orcamento(
         cliente_id=original.cliente_id,
-        data_emissao=datetime.now(timezone.utc),
-        data_validade=datetime.now(timezone.utc) + timedelta(days=validade_dias),
+        data_emissao=_utcnow(),
+        data_validade=_utcnow() + timedelta(days=validade_dias),
         observacoes=original.observacoes,
         valor_total=original.valor_total,
     )
@@ -370,7 +382,7 @@ def atualizar_status(hash_id):
         return jsonify({"error": "Orcamento nao encontrado."}), 404
 
     orcamento.status = novo_status
-    orcamento.atualizado_em = datetime.now(timezone.utc)
+    orcamento.atualizado_em = _utcnow()
     db.session.commit()
     return jsonify({"status": "updated", "novo_status": novo_status})
 
