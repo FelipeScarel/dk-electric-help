@@ -1,81 +1,83 @@
 """
-Servico de notificacao WhatsApp para DK Electric Help.
-Dispara mensagens automaticas para os socios quando um cliente agenda um servico.
+Servico profissional de notificacao WhatsApp para DK Electric Help.
+Dispara mensagens automaticas para os socios quando um cliente agenda.
 
-Backends suportados:
-- callmebot (recomendado, gratis): https://www.callmebot.com
-- log (fallback): apenas imprime a mensagem no console
+Usa a Meta WhatsApp Cloud API (gratuita para ate 1000 msgs/mes).
+Os destinatarios NAO precisam adicionar contatos nem fazer nada -
+recebem as mensagens diretamente no WhatsApp como se fossem normais.
+
+Para ativar: configure as env vars META_WHATSAPP_TOKEN e META_WHATSAPP_PHONE_ID
+no dashboard do Render ou no .env local.
 """
 
+import json
 import os
-import urllib.request
-import urllib.parse
 import urllib.error
+import urllib.request
 
 from config import Config
 
 
-def _send_via_callmebot(phone: str, message: str, apikey: str) -> bool:
-    """Envia mensagem via CallMeBot API (gratis)."""
-    url = "https://api.callmebot.com/whatsapp.php"
-    params = urllib.parse.urlencode({
-        "phone": phone,
-        "text": message,
-        "apikey": apikey,
-    })
-    full_url = f"{url}?{params}"
-    try:
-        req = urllib.request.Request(full_url, headers={"User-Agent": "DK-Electric-Help/1.0"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            body = resp.read().decode()
-            if "Message queued" in body or "Message sent" in body:
-                return True
-            print(f"[WHATSAPP] CallMeBot response: {body}")
-            return False
-    except urllib.error.URLError as e:
-        print(f"[WHATSAPP] CallMeBot error for {phone}: {e}")
+def _send_whatsapp(phone: str, message: str) -> bool:
+    """Envia mensagem via Meta WhatsApp Cloud API (oficial, profissional)."""
+    token = (os.environ.get("META_WHATSAPP_TOKEN") or "").strip()
+    phone_id = (os.environ.get("META_WHATSAPP_PHONE_ID") or "").strip()
+
+    if not token or not phone_id:
         return False
 
-
-def _send_via_meta(phone: str, message: str, token: str, phone_id: str) -> bool:
-    """Envia mensagem via Meta WhatsApp Cloud API."""
     url = f"https://graph.facebook.com/v21.0/{phone_id}/messages"
-    import json
-    data = json.dumps({
+    body = json.dumps({
         "messaging_product": "whatsapp",
         "recipient_type": "individual",
         "to": phone,
         "type": "text",
         "text": {"preview_url": False, "body": message},
     }).encode("utf-8")
+
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
+        "User-Agent": "DK-Electric-Help/1.0",
     }
+
     try:
-        req = urllib.request.Request(url, data=data, headers=headers)
+        req = urllib.request.Request(url, data=body, headers=headers, method="POST")
         with urllib.request.urlopen(req, timeout=15) as resp:
-            body = resp.read().decode()
-            print(f"[WHATSAPP] Meta API response for {phone}: {body}")
-            return resp.status == 200
-    except urllib.error.URLError as e:
-        print(f"[WHATSAPP] Meta API error for {phone}: {e}")
+            result = json.loads(resp.read().decode())
+            if resp.status == 200 or resp.status == 201:
+                print(f"[WHATSAPP] Enviado para {phone} - msg ID: {result.get('messages', [{}])[0].get('id', 'ok')}")
+                return True
+            print(f"[WHATSAPP] Erro Meta API ({resp.status}): {result}")
+            return False
+    except urllib.error.HTTPError as e:
+        body = e.read().decode() if e.fp else ""
+        print(f"[WHATSAPP] HTTP {e.code} para {phone}: {body[:300]}")
+        return False
+    except Exception as e:
+        print(f"[WHATSAPP] Erro para {phone}: {e}")
         return False
 
 
 def notify_scheduling(orcamento, agendamento) -> dict:
     """
     Notifica os socios via WhatsApp sobre um novo agendamento.
-    Retorna dict com status para cada numero.
+    Se META_WHATSAPP_TOKEN nao estiver configurado, apenas loga a mensagem.
     """
     cliente = orcamento.cliente
-    itens_desc = "\n".join(
-        f"  • {i.descricao[:60]} - R$ {i.valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        for i in orcamento.itens
-    )
+
+    # Formata itens
+    linhas_itens = []
+    for i in orcamento.itens:
+        valor = f"R$ {i.valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        linhas_itens.append(f"  - {i.descricao[:50]}  |  {valor}")
+    itens_txt = "\n".join(linhas_itens) if linhas_itens else "Nenhum item"
+
+    valor_total = f"R$ {orcamento.valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
     mensagem = (
-        f"*NOVO AGENDAMENTO - DK ELECTRIC HELP*\n\n"
+        f"*NOVO AGENDAMENTO - DK ELECTRIC HELP*\n"
+        f"{'='*35}\n\n"
         f"*Cliente:* {cliente.nome}\n"
         f"*Empresa:* {cliente.empresa or '---'}\n"
         f"*Telefone:* {cliente.telefone}\n"
@@ -83,37 +85,28 @@ def notify_scheduling(orcamento, agendamento) -> dict:
         f"*Cidade:* {cliente.cidade}\n\n"
         f"*Data:* {agendamento.data_agendada.strftime('%d/%m/%Y')}\n"
         f"*Horario:* {agendamento.periodo}\n\n"
-        f"*Servicos:*\n{itens_desc}\n\n"
-        f"*Valor Total:* R$ {orcamento.valor_total:,.2f}\n"
-        f"*Orcamento:* {orcamento.hash_id}\n"
-    ).replace(",", "X").replace(".", ",").replace("X", ".")
+        f"*SERVICOS:*\n{itens_txt}\n\n"
+        f"*VALOR TOTAL: {valor_total}*\n"
+        f"*Orcamento: {orcamento.hash_id}*"
+    )
 
     phones = [
-        os.environ.get("WHATSAPP_SOCIO_1") or Config.WHATSAPP_SOCIO_1,
-        os.environ.get("WHATSAPP_SOCIO_2") or Config.WHATSAPP_SOCIO_2,
+        (os.environ.get("WHATSAPP_SOCIO_1") or Config.WHATSAPP_SOCIO_1).strip(),
+        (os.environ.get("WHATSAPP_SOCIO_2") or Config.WHATSAPP_SOCIO_2).strip(),
     ]
-    phones = [p.strip() for p in phones if p and p.strip()]
+    phones = [p for p in phones if p]
 
     if not phones:
-        print("[WHATSAPP] Nenhum telefone configurado. Mensagem nao enviada.")
-        print(f"[WHATSAPP] Conteudo:\n{mensagem}")
-        return {"status": "skipped", "reason": "no phones configured"}
+        print("[WHATSAPP] Nenhum telefone configurado.")
+        return {"status": "skipped"}
 
     results = {}
-    apikey = os.environ.get("CALLMEBOT_APIKEY", "").strip()
-    meta_token = os.environ.get("META_WHATSAPP_TOKEN", "").strip()
-    meta_phone_id = os.environ.get("META_WHATSAPP_PHONE_ID", "").strip()
-
     for phone in phones:
-        success = False
-        if apikey:
-            success = _send_via_callmebot(phone, mensagem, apikey)
-        if not success and meta_token and meta_phone_id:
-            success = _send_via_meta(phone, mensagem, meta_token, meta_phone_id)
-        if not success:
-            print(f"[WHATSAPP] Falha ao enviar para {phone}. Backend nao configurado.")
-            print(f"[WHATSAPP] Mensagem que seria enviada:\n{mensagem}")
-
-        results[phone] = "sent" if success else "failed"
+        ok = _send_whatsapp(phone, mensagem)
+        results[phone] = "sent" if ok else "failed"
+        if not ok:
+            # Loga a mensagem que seria enviada
+            print(f"[WHATSAPP] FALHA ao enviar para {phone}. Configure META_WHATSAPP_TOKEN.")
+            print(f"[WHATSAPP] Mensagem nao enviada:\n{mensagem}")
 
     return {"status": "completed", "results": results}

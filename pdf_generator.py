@@ -81,33 +81,51 @@ def _draw_section_header(c, y, text):
 
 
 def _draw_header(c, y):
-    """Desenha cabecalho com logo e info de contato a direita."""
+    """Desenha cabecalho profissional com logo proporcional e info de contato."""
     logo_path = os.path.join(os.path.dirname(__file__), "static", "img", "Logo.png")
-    if os.path.exists(logo_path):
-        c.drawImage(logo_path, MARGIN, y - 30, width=160, height=45, preserveAspectRatio=True, mask=None)
-    else:
-        c.setFont(FONT_BOLD, 18)
-        c.setFillColor(BLACK)
-        c.drawString(MARGIN, y, "DK")
-        c.setFillColor(RED)
-        c.drawString(MARGIN + 32, y, "ELECTRIC")
-        c.setFillColor(BLACK)
-        c.drawString(MARGIN + 122, y, "HELP")
 
-    # Info a direita
-    c.setFont(FONT_BOLD, 8)
+    # Logo com altura fixa e largura proporcional
+    logo_h = 50
+    if os.path.exists(logo_path):
+        from PIL import Image
+        img = Image.open(logo_path)
+        img_w, img_h = img.size
+        aspect = img_w / img_h
+        logo_w = logo_h * aspect
+        # Limita largura maxima
+        max_w = CONTENT_W * 0.55
+        if logo_w > max_w:
+            logo_w = max_w
+            logo_h = max_w / aspect
+        c.drawImage(logo_path, MARGIN, y - logo_h, width=logo_w, height=logo_h,
+                     preserveAspectRatio=True, mask=None)
+    else:
+        # Fallback: texto DK ELECTRIC HELP
+        c.setFont(FONT_BOLD, 22)
+        c.setFillColor(BLACK)
+        c.drawString(MARGIN, y - 12, "DK")
+        c.setFillColor(RED)
+        c.drawString(MARGIN + 40, y - 12, "ELECTRIC")
+        c.setFillColor(BLACK)
+        c.drawString(MARGIN + 148, y - 12, "HELP")
+
+    # Info de contato a direita
+    c.setFont(FONT_BOLD, 9)
     c.setFillColor(BLACK)
-    c.drawRightString(PAGE_W - MARGIN, y, f"Contato: {Config.COMPANY_PHONE}")
+    c.drawRightString(PAGE_W - MARGIN, y - 8, f"Contato: {Config.COMPANY_PHONE}")
     c.setFont(FONT_FAMILY, 8)
     c.setFillColor(colors.HexColor("#444444"))
-    c.drawRightString(PAGE_W - MARGIN, y - 12, f"E-mail: {Config.COMPANY_EMAIL}")
+    c.drawRightString(PAGE_W - MARGIN, y - 22, f"E-mail: {Config.COMPANY_EMAIL}")
+    c.setFont(FONT_FAMILY, 7)
+    c.setFillColor(colors.HexColor("#888888"))
+    c.drawRightString(PAGE_W - MARGIN, y - 34, "Engenharia Eletrica de Precisao")
 
-    # Linha preta abaixo do cabecalho
+    # Linha preta grossa abaixo do cabecalho
     c.setStrokeColor(BLACK)
-    c.setLineWidth(2)
-    c.line(MARGIN, y - 30, PAGE_W - MARGIN, y - 30)
+    c.setLineWidth(2.5)
+    c.line(MARGIN, y - 50, PAGE_W - MARGIN, y - 50)
 
-    return y - 50
+    return y - 68
 
 
 def _draw_client_grid(c, y, orcamento):

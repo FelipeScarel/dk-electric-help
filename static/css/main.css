@@ -44,7 +44,7 @@ img { max-width: 100%; height: auto; }
   text-decoration: none;
   flex-shrink: 0;
 }
-.nav-logo-img { height: 38px; width: auto; display: block; }
+.nav-logo-img { height: 44px; width: auto; display: block; max-width: 200px; }
 .nav-brand-accent { color: #D60000; }
 .nav-links { display: flex; gap: 14px; }
 .nav-link {
@@ -829,8 +829,8 @@ h3 { font-size: 1rem; font-weight: 600; color: #000; }
 @media (min-width: 480px) {
   html { font-size: 15px; }
   .container { padding: 0 20px; }
-  .nav-inner { height: 54px; }
-  .nav-logo-img { height: 42px; }
+  .nav-inner { height: 56px; }
+  .nav-logo-img { height: 48px; }
   .nav-link { font-size: 0.85rem; }
   .nav-links { gap: 20px; }
   h1 { font-size: 1.8rem; }
@@ -845,8 +845,8 @@ h3 { font-size: 1rem; font-weight: 600; color: #000; }
 @media (min-width: 640px) {
   html { font-size: 16px; }
   .container { padding: 0 24px; }
-  .nav-inner { height: 56px; }
-  .nav-logo-img { height: 46px; }
+  .nav-inner { height: 60px; }
+  .nav-logo-img { height: 52px; }
   .form-grid { grid-template-columns: 1fr 1fr; }
   .span-2 { grid-column: span 2; }
   .total-display { flex-wrap: nowrap; gap: 20px; }
