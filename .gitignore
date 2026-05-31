@@ -4,5 +4,6 @@ __pycache__/
 *.db
 pdf_output/*.pdf
 .env
+start.ps1
 .DS_Store
 Thumbs.db

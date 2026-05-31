@@ -71,7 +71,9 @@
       "Bash(curl -s -o nul -w \"HTTP %{http_code}, Size: %{size_download}\" https://unlike-impact-housewives-telling.trycloudflare.com/static/css/main.css)",
       "Bash(curl -s -o nul -w \"HTTP %{http_code}, Size: %{size_download}\" https://unlike-impact-housewives-telling.trycloudflare.com/static/js/orcamento.js)",
       "Bash(curl -s -o nul -w \"HTTP %{http_code}, Size: %{size_download}\" https://unlike-impact-housewives-telling.trycloudflare.com/static/img/logo.jpeg)",
-      "Bash(\"c:/Users/felip/SISTEMA DK/venv/Scripts/python.exe\" -c \"import sys; sys.path.insert\\(0, 'c:/Users/felip/SISTEMA DK'\\); from whatsapp_service import notify_scheduling; print\\('whatsapp_service OK'\\); from app import app; print\\('app OK'\\)\")"
+      "Bash(\"c:/Users/felip/SISTEMA DK/venv/Scripts/python.exe\" -c \"import sys; sys.path.insert\\(0, 'c:/Users/felip/SISTEMA DK'\\); from whatsapp_service import notify_scheduling; print\\('whatsapp_service OK'\\); from app import app; print\\('app OK'\\)\")",
+      "PowerShell(Stop-Process -Force)",
+      "PowerShell(powershell -ExecutionPolicy Bypass -File \"c:\\\\Users\\\\felip\\\\SISTEMA DK\\\\start.ps1\")"
     ]
   }
 }
