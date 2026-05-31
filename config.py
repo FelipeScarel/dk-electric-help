@@ -25,3 +25,6 @@ class Config:
     COMPANY_PHONE = os.environ.get("COMPANY_PHONE") or "(11) 99999-9999"
     COMPANY_EMAIL = os.environ.get("COMPANY_EMAIL") or "contato@dkelectric.com.br"
     PROPOSAL_VALIDITY_DAYS = int(os.environ.get("PROPOSAL_VALIDITY_DAYS", "15"))
+    WHATSAPP_SOCIO_1 = os.environ.get("WHATSAPP_SOCIO_1") or "5519996387901"
+    WHATSAPP_SOCIO_2 = os.environ.get("WHATSAPP_SOCIO_2") or "5519987203886"
+    CALLMEBOT_APIKEY = os.environ.get("CALLMEBOT_APIKEY") or ""

@@ -82,7 +82,7 @@ def _draw_section_header(c, y, text):
 
 def _draw_header(c, y):
     """Desenha cabecalho com logo e info de contato a direita."""
-    logo_path = os.path.join(os.path.dirname(__file__), "static", "img", "logo.jpeg")
+    logo_path = os.path.join(os.path.dirname(__file__), "static", "img", "Logo.png")
     if os.path.exists(logo_path):
         c.drawImage(logo_path, MARGIN, y - 30, width=160, height=45, preserveAspectRatio=True, mask=None)
     else:

@@ -16,6 +16,7 @@ from database import (
     init_db,
 )
 from pdf_generator import generate_orcamento_pdf
+from whatsapp_service import notify_scheduling
 
 
 def _utcnow():
@@ -250,6 +251,12 @@ def confirmar_agendamento():
         orcamento.status = "AGENDADO"
         orcamento.atualizado_em = _utcnow()
         db.session.commit()
+
+        # Disparar notificacao WhatsApp para os socios (nao bloqueia se falhar)
+        try:
+            notify_scheduling(orcamento, agendamento)
+        except Exception as wz_err:
+            print(f"[WHATSAPP] Erro ao notificar: {wz_err}", flush=True)
 
         return jsonify(
             {

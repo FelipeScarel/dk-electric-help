@@ -59,7 +59,19 @@
       "Bash('c:/Users/felip/SISTEMA DK/venv/Scripts/python.exe' -c ' *)",
       "Bash(curl -s -X POST https://unlike-impact-housewives-telling.trycloudflare.com/api/orcamentos -H \"Content-Type: application/json\" -d '{\"nome\":\"Teste HTTPS\",\"telefone\":\"1199999999\",\"endereco\":\"Rua Teste 123\",\"cidade\":\"Sao Paulo\",\"itens\":[{\"descricao\":\"Instalacao eletrica\",\"quantidade\":1,\"valor_unitario\":150}]}')",
       "Bash(curl -sI https://unlike-impact-housewives-telling.trycloudflare.com/health)",
-      "Bash(curl -s -o \"C:\\\\Users\\\\felip\\\\SISTEMA DK\\\\teste_https.pdf\" \"https://unlike-impact-housewives-telling.trycloudflare.com/pdf/06AB7E434306\")"
+      "Bash(curl -s -o \"C:\\\\Users\\\\felip\\\\SISTEMA DK\\\\teste_https.pdf\" \"https://unlike-impact-housewives-telling.trycloudflare.com/pdf/06AB7E434306\")",
+      "Bash(git reset *)",
+      "Bash(rm -f teste.pdf teste_https.pdf teste_tunnel.pdf)",
+      "Bash(curl -s -X POST https://unlike-impact-housewives-telling.trycloudflare.com/api/orcamentos -H 'Content-Type: application/json' -d '{\"nome\":\"Teste Final\",\"telefone\":\"1199999999\",\"endereco\":\"Rua Teste 123\",\"cidade\":\"Sao Paulo\",\"itens\":[{\"descricao\":\"Servico eletrico\",\"quantidade\":1,\"valor_unitario\":200}]}')",
+      "Bash(curl -s -X POST https://unlike-impact-housewives-telling.trycloudflare.com/api/orcamentos -H 'Content-Type: application/json' -d '{\"nome\":\"Teste 2\",\"telefone\":\"1199999999\",\"endereco\":\"Rua X\",\"cidade\":\"SP\",\"itens\":[{\"descricao\":\"Teste\",\"quantidade\":1,\"valor_unitario\":100}]}')",
+      "Bash(curl -s http://127.0.0.1:5000/api/slots-disponiveis)",
+      "Bash(curl -s -o nul -w \"HTTP %{http_code}\" http://127.0.0.1:5000/static/css/main.css)",
+      "Bash(curl -s http://127.0.0.1:5000/)",
+      "Bash(curl -s https://unlike-impact-housewives-telling.trycloudflare.com/)",
+      "Bash(curl -s -o nul -w \"HTTP %{http_code}, Size: %{size_download}\" https://unlike-impact-housewives-telling.trycloudflare.com/static/css/main.css)",
+      "Bash(curl -s -o nul -w \"HTTP %{http_code}, Size: %{size_download}\" https://unlike-impact-housewives-telling.trycloudflare.com/static/js/orcamento.js)",
+      "Bash(curl -s -o nul -w \"HTTP %{http_code}, Size: %{size_download}\" https://unlike-impact-housewives-telling.trycloudflare.com/static/img/logo.jpeg)",
+      "Bash(\"c:/Users/felip/SISTEMA DK/venv/Scripts/python.exe\" -c \"import sys; sys.path.insert\\(0, 'c:/Users/felip/SISTEMA DK'\\); from whatsapp_service import notify_scheduling; print\\('whatsapp_service OK'\\); from app import app; print\\('app OK'\\)\")"
     ]
   }
 }
