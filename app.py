@@ -2,7 +2,7 @@ import os
 import traceback
 from datetime import datetime, timedelta, timezone
 
-from flask import Flask, current_app, jsonify, redirect, render_template, request, send_file, url_for
+from flask import Flask, jsonify, redirect, render_template, request, send_file, url_for
 from sqlalchemy import func
 
 from config import Config
@@ -253,35 +253,17 @@ def confirmar_agendamento():
         orcamento.atualizado_em = _utcnow()
         db.session.commit()
 
-        # Preparar dados para WhatsApp ANTES de sair da sessao
-        wz_data = {
-            "cliente_nome": orcamento.cliente.nome,
-            "cliente_empresa": orcamento.cliente.empresa or "",
-            "cliente_telefone": orcamento.cliente.telefone,
-            "cliente_endereco": orcamento.cliente.endereco,
-            "cliente_cidade": orcamento.cliente.cidade,
-            "data": agendamento.data_agendada.strftime("%d/%m/%Y"),
-            "hora": agendamento.periodo,
-            "valor": f"R$ {orcamento.valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-            "obs": (orcamento.observacoes or "Nenhuma").strip(),
-            "hash_id": orcamento.hash_id,
-            "servicos": "\n".join(
-                f"  - {i.descricao[:50]}: R$ {i.valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                for i in orcamento.itens
-            ),
-            "agendamento_id": agendamento.id,
-        }
-
-        import threading
-        _app = current_app._get_current_object()
-        t = threading.Thread(target=lambda: notify_scheduling(wz_data, _app), daemon=True)
-        t.start()
+        # Gerar link WhatsApp com dados do agendamento
+        wz_numero = Config.WHATSAPP_NOTIFY.strip()
+        wz_msg = notify_scheduling(orcamento, agendamento)
+        wz_url = f"https://wa.me/{wz_numero}?text={wz_msg}"
 
         return jsonify(
             {
                 "status": "ok",
                 "agendamento": agendamento.to_dict(),
                 "redirect": url_for("agendamento_confirmado", hash_id=hash_id, _external=True),
+                "whatsapp_url": wz_url,
             }
         )
     except Exception as e:

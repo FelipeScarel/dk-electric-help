@@ -111,6 +111,11 @@
     })
     .then(function (result) {
       if (result.status === 200) {
+        // Abre WhatsApp com a mensagem pronta
+        if (result.body.whatsapp_url) {
+          window.open(result.body.whatsapp_url, '_blank');
+        }
+        // Redireciona para confirmacao
         window.location.href = '/agendamento-confirmado?hash_id=' + btn.getAttribute('data-hash');
       } else {
         msgEl.className = 'schedule-message error';
