@@ -76,7 +76,8 @@
       "PowerShell(powershell -ExecutionPolicy Bypass -File \"c:\\\\Users\\\\felip\\\\SISTEMA DK\\\\start.ps1\")",
       "PowerShell(docker pull atendai/evolution-api 2>&1)",
       "PowerShell(Test-Path \"c:\\\\Users\\\\felip\\\\SISTEMA DK\\\\.wpp\\\\Default\"; Write-Host \"Sessao existe: $\\(Test-Path 'c:\\\\Users\\\\felip\\\\SISTEMA DK\\\\.wpp\\\\Default'\\)\")",
-      "Bash(curl -s http://127.0.0.1:5000/orcamentos)"
+      "Bash(curl -s http://127.0.0.1:5000/orcamentos)",
+      "Bash(grep -oP 'https://[a-z-]+\\\\.trycloudflare\\\\.com' \"C:\\\\Users\\\\felip\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-felip-SISTEMA-DK\\\\6c3eaa64-bb81-4f16-97dc-685a09c33ed8\\\\tasks\\\\b1nr0cm0y.output\")"
     ]
   }
 }

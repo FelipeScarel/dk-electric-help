@@ -182,7 +182,7 @@
 
     var btn = document.getElementById("btn-gerar");
     btn.disabled = true;
-    btn.innerHTML = '<span class="skeleton" style="display:inline-block;width:20px;height:20px;border-radius:50%;"></span> Gerando PDF...';
+    btn.textContent = "Gerando PDF...";
 
     fetch("/api/orcamentos", {
       method: "POST",

@@ -4,38 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0A0A0A">
-<meta name="description" content="DK Electric Help - Sistema de Orcamentos para Engenharia Eletrica">
+<meta name="description" content="DK Electric Help — Plataforma profissional de orcamentos para engenharia eletrica">
 <title>{% block title %}DK Electric Help{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 <style>
-/* Critical CSS inline to prevent FOUC */
-.navbar{background:#0A0A0A;position:sticky;top:0;z-index:1000}
-.nav-inner{display:flex;align-items:center;justify-content:space-between;height:62px}
+.navbar{background:rgba(10,10,10,0.92);position:sticky;top:0;z-index:1000}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
 </style>
 {% block extra_head %}{% endblock %}
 </head>
 <body>
-<nav class="navbar" role="navigation" aria-label="Navegacao principal">
+<nav class="navbar" role="navigation" aria-label="Principal">
   <div class="container nav-inner">
-    <a href="/" class="nav-brand" aria-label="DK Electric Help - Pagina inicial">
-      <img src="{{ url_for('static', filename='img/Logo.png') }}" alt="DK Electric Help" class="nav-logo-img">
+    <a href="/" class="nav-brand" aria-label="DK Electric Help — Inicio">
+      <img src="{{ url_for('static', filename='img/Logo.png') }}" alt="DK Electric Help" class="nav-logo-img" width="auto" height="42">
     </a>
-
-    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu" aria-expanded="false" onclick="document.getElementById('nav-mobile').classList.toggle('open'); this.setAttribute('aria-expanded', document.getElementById('nav-mobile').classList.contains('open'));">
-      ☰
-    </button>
-
+    <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false" onclick="var m=document.getElementById('nav-mobile');m.classList.toggle('open');this.setAttribute('aria-expanded',m.classList.contains('open'))">☰</button>
     <div class="nav-links">
-      <a href="/" class="nav-link {{ 'active' if request.path == '/' }}">Novo Orcamento</a>
+      <a href="/" class="nav-link {{ 'active' if request.path == '/' }}">Orcamento</a>
       <a href="/orcamentos" class="nav-link {{ 'active' if request.path == '/orcamentos' }}">Painel</a>
     </div>
   </div>
-
   <div class="nav-mobile" id="nav-mobile">
-    <a href="/" class="nav-link">Novo Orcamento</a>
+    <a href="/" class="nav-link">Orcamento</a>
     <a href="/orcamentos" class="nav-link">Painel</a>
   </div>
 </nav>

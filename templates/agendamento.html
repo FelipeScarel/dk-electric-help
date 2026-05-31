@@ -1,37 +1,30 @@
 {% extends "base.html" %}
-{% block title %}Agendar Servico — DK Electric Help{% endblock %}
+{% block title %}Agendar — DK Electric Help{% endblock %}
 {% block content %}
 <div class="schedule-page">
   <div class="schedule-header">
     <h1>Agendar Servico</h1>
     <div class="schedule-badge">{{ orcamento.hash_id }}</div>
-    <p>Selecione a data e horario desejados para execucao do servico.</p>
+    <p>Selecione a data e horario para execucao do servico.</p>
   </div>
 
   <div class="schedule-grid">
     <div class="schedule-panel">
       <h3>Horarios Disponiveis</h3>
-      <div class="slots-list" id="slots-list">
+      <div class="slots-list" id="slots-list" role="listbox" aria-label="Horarios disponiveis">
         {% if slots %}
           {% set prev_day = '' %}
           {% for slot in slots %}
             {% set day_str = slot.data.strftime('%d/%m/%Y - %A') %}
-            {% if day_str != prev_day %}
-              <div class="day-header">{{ day_str }}</div>
-            {% endif %}
-            <button class="slot-btn"
-                    data-slot-id="{{ slot.id }}"
-                    data-date="{{ slot.data.isoformat() }}"
-                    data-time="{{ slot.hora_inicio.strftime('%H:%M') }} - {{ slot.hora_fim.strftime('%H:%M') }}"
-                    onclick="selectSlot(this)"
-                    aria-label="Selecionar horario {{ slot.hora_inicio.strftime('%H:%M') }}">
+            {% if day_str != prev_day %}<div class="day-header">{{ day_str }}</div>{% endif %}
+            <button class="slot-btn" role="option" data-slot-id="{{ slot.id }}" data-date="{{ slot.data.isoformat() }}" data-time="{{ slot.hora_inicio.strftime('%H:%M') }} - {{ slot.hora_fim.strftime('%H:%M') }}" onclick="selectSlot(this)" aria-label="{{ slot.hora_inicio.strftime('%H:%M') }} as {{ slot.hora_fim.strftime('%H:%M') }}">
               <span class="slot-date">{{ slot.data.strftime('%d/%m') }}</span>
               <span class="slot-time">{{ slot.hora_inicio.strftime('%H:%M') }} - {{ slot.hora_fim.strftime('%H:%M') }}</span>
             </button>
             {% set prev_day = day_str %}
           {% endfor %}
         {% else %}
-          <div class="no-slots">Nenhum horario disponivel. Entre em contato: {{ config.COMPANY_PHONE }}</div>
+          <div class="no-slots">Sem horarios. Contato: {{ config.COMPANY_PHONE }}</div>
         {% endif %}
       </div>
     </div>
@@ -43,16 +36,9 @@
       <div class="rsm-row"><span class="rsm-label">Cidade</span><span class="rsm-value">{{ orcamento.cliente.cidade }}</span></div>
       <div class="rsm-row"><span class="rsm-label">Validade</span><span class="rsm-value">{{ orcamento.data_validade.strftime('%d/%m/%Y') }}</span></div>
       <div class="rsm-total">R$ {{ "%.2f"|format(orcamento.valor_total) }}</div>
-
-      <div class="selected-indicator" id="selected-info" style="display:none;">
-        Selecionado:<strong id="selected-date-text"></strong>
-      </div>
-
-      <button class="btn-schedule-confirm" id="btn-confirmar" disabled
-              data-hash="{{ orcamento.hash_id }}">
-        Confirmar Agendamento
-      </button>
-      <div id="schedule-message" class="schedule-message" style="display:none;"></div>
+      <div class="selected-indicator" id="selected-info" style="display:none">Selecionado:<strong id="selected-date-text"></strong></div>
+      <button class="btn-schedule-confirm" id="btn-confirmar" disabled data-hash="{{ orcamento.hash_id }}">Confirmar Agendamento</button>
+      <div id="schedule-message" style="display:none;margin-top:10px"></div>
     </div>
   </div>
 </div>
@@ -60,61 +46,6 @@
 
 {% block extra_scripts %}
 <script>
-(function () {
-  var selectedSlotId = null;
-
-  window.selectSlot = function (el) {
-    document.querySelectorAll('.slot-btn').forEach(function (c) { c.classList.remove('selected'); });
-    el.classList.add('selected');
-    selectedSlotId = el.getAttribute('data-slot-id');
-    document.getElementById('selected-date-text').textContent =
-      el.getAttribute('data-date') + ' ' + el.getAttribute('data-time');
-    document.getElementById('selected-info').style.display = 'block';
-    document.getElementById('btn-confirmar').disabled = false;
-  };
-
-  document.getElementById('btn-confirmar').addEventListener('click', function () {
-    if (!selectedSlotId) return;
-    var btn = this;
-    btn.disabled = true;
-    btn.textContent = 'Confirmando...';
-    var msgEl = document.getElementById('schedule-message');
-    msgEl.style.display = 'none';
-
-    fetch('/api/agendar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        hash_id: btn.getAttribute('data-hash'),
-        slot_id: parseInt(selectedSlotId)
-      })
-    })
-    .then(function (r) {
-      var ct = r.headers.get('Content-Type') || '';
-      if (ct.indexOf('application/json') !== -1)
-        return r.json().then(function (d) { return { status: r.status, body: d }; });
-      throw new Error('Erro do servidor (HTTP ' + r.status + ')');
-    })
-    .then(function (result) {
-      if (result.status === 200) {
-        if (result.body.whatsapp_url) window.open(result.body.whatsapp_url, '_blank');
-        window.location.href = '/agendamento-confirmado?hash_id=' + btn.getAttribute('data-hash');
-      } else {
-        msgEl.className = 'schedule-message error';
-        msgEl.textContent = result.body.error || 'Erro ao confirmar.';
-        msgEl.style.display = 'block';
-        btn.disabled = false;
-        btn.textContent = 'Confirmar Agendamento';
-      }
-    })
-    .catch(function (err) {
-      msgEl.className = 'schedule-message error';
-      msgEl.textContent = err.message || 'Erro de conexao.';
-      msgEl.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'Confirmar Agendamento';
-    });
-  });
-})();
+(function(){var sid=null;window.selectSlot=function(e){document.querySelectorAll('.slot-btn').forEach(function(c){c.classList.remove('selected')});e.classList.add('selected');sid=e.getAttribute('data-slot-id');document.getElementById('selected-date-text').textContent=e.getAttribute('data-date')+' '+e.getAttribute('data-time');document.getElementById('selected-info').style.display='block';document.getElementById('btn-confirmar').disabled=false};document.getElementById('btn-confirmar').addEventListener('click',function(){if(!sid)return;var b=this;b.disabled=true;b.textContent='Confirmando...';var m=document.getElementById('schedule-message');m.style.display='none';fetch('/api/agendar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hash_id:b.getAttribute('data-hash'),slot_id:parseInt(sid)})}).then(function(r){var ct=r.headers.get('Content-Type')||'';if(ct.indexOf('application/json')!==-1)return r.json().then(function(d){return{status:r.status,body:d}});throw new Error('Erro do servidor (HTTP '+r.status+')')}).then(function(r){if(r.status===200){if(r.body.whatsapp_url)window.open(r.body.whatsapp_url,'_blank');window.location.href='/agendamento-confirmado?hash_id='+b.getAttribute('data-hash')}else{m.className='schedule-message error';m.textContent=r.body.error||'Erro.';m.style.display='block';b.disabled=false;b.textContent='Confirmar Agendamento'}}).catch(function(e){m.className='schedule-message error';m.textContent=e.message||'Erro.';m.style.display='block';b.disabled=false;b.textContent='Confirmar Agendamento'})})})();
 </script>
 {% endblock %}

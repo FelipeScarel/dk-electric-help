@@ -7,14 +7,14 @@
     <p>Preencha os dados do cliente e itens do servico. Tempo estimado: menos de 2 minutos.</p>
   </div>
 
-  <form id="form-orcamento" class="orcamento-form" autocomplete="off">
-    <!-- CLIENTE -->
+  <form id="form-orcamento" class="orcamento-form" autocomplete="off" novalidate>
+    <!-- ===== CLIENTE ===== -->
     <fieldset class="form-section">
       <legend class="section-legend">Dados do Cliente</legend>
       <div class="form-grid cols-2">
         <div class="field span-2">
           <label class="field-label" for="nome">Nome Completo <span class="req">*</span></label>
-          <input type="text" id="nome" class="field-input" required placeholder="Nome completo do cliente" autocomplete="name">
+          <input type="text" id="nome" class="field-input" required placeholder="Ex: Joao da Silva" autocomplete="name" aria-required="true">
         </div>
         <div class="field">
           <label class="field-label" for="empresa">Empresa</label>
@@ -22,12 +22,12 @@
         </div>
         <div class="field">
           <label class="field-label" for="telefone">Telefone <span class="req">*</span></label>
-          <input type="tel" id="telefone" class="field-input" required placeholder="(11) 99999-9999" maxlength="15">
+          <input type="tel" id="telefone" class="field-input" required placeholder="(11) 99999-9999" maxlength="15" aria-required="true">
         </div>
       </div>
     </fieldset>
 
-    <!-- ENDERECO -->
+    <!-- ===== ENDERECO ===== -->
     <fieldset class="form-section">
       <legend class="section-legend">Endereco do Servico</legend>
       <div class="form-grid cols-2">
@@ -39,7 +39,7 @@
         <div class="field"></div>
         <div class="field span-2">
           <label class="field-label" for="endereco">Endereco <span class="req">*</span></label>
-          <input type="text" id="endereco" class="field-input" required placeholder="Rua, Avenida...">
+          <input type="text" id="endereco" class="field-input" required placeholder="Rua, Avenida..." aria-required="true">
         </div>
         <div class="field">
           <label class="field-label" for="numero">Numero</label>
@@ -55,87 +55,69 @@
         </div>
         <div class="field">
           <label class="field-label" for="cidade">Cidade <span class="req">*</span></label>
-          <input type="text" id="cidade" class="field-input" required placeholder="Cidade">
+          <input type="text" id="cidade" class="field-input" required placeholder="Cidade" aria-required="true">
         </div>
         <div class="field">
           <label class="field-label" for="estado">Estado</label>
-          <select id="estado" class="field-select">
+          <select id="estado" class="field-select" aria-label="Estado">
             <option value="">Selecione</option>
-            <option value="SP">SP</option><option value="RJ">RJ</option><option value="MG">MG</option>
-            <option value="PR">PR</option><option value="RS">RS</option><option value="SC">SC</option>
-            <option value="BA">BA</option><option value="PE">PE</option><option value="CE">CE</option>
-            <option value="DF">DF</option><option value="GO">GO</option><option value="MT">MT</option>
-            <option value="MS">MS</option><option value="ES">ES</option>
+            <option value="SP">SP</option><option value="RJ">RJ</option><option value="MG">MG</option><option value="PR">PR</option><option value="RS">RS</option><option value="SC">SC</option><option value="BA">BA</option><option value="PE">PE</option><option value="CE">CE</option><option value="DF">DF</option><option value="GO">GO</option><option value="MT">MT</option><option value="MS">MS</option><option value="ES">ES</option>
           </select>
         </div>
         <div class="field">
           <label class="field-label" for="validade_dias">Validade</label>
-          <select id="validade_dias" class="field-select">
-            <option value="7">7 dias</option>
-            <option value="15" selected>15 dias</option>
-            <option value="30">30 dias</option>
-            <option value="60">60 dias</option>
+          <select id="validade_dias" class="field-select" aria-label="Validade da proposta">
+            <option value="7">7 dias</option><option value="15" selected>15 dias</option><option value="30">30 dias</option><option value="60">60 dias</option>
           </select>
         </div>
       </div>
     </fieldset>
 
-    <!-- ITENS -->
+    <!-- ===== ITENS ===== -->
     <fieldset class="form-section">
       <legend class="section-legend">Itens do Orcamento</legend>
       <div class="table-shell">
-        <table class="items-table" id="items-table">
-          <thead>
-            <tr>
-              <th class="col-i">ITEM</th>
-              <th class="col-d">DESCRICAO</th>
-              <th class="col-q">QTD</th>
-              <th class="col-vu">VALOR UNIT. (R$)</th>
-              <th class="col-vt">VALOR TOTAL (R$)</th>
-              <th class="col-act"></th>
-            </tr>
-          </thead>
+        <table class="items-table" id="items-table" role="grid" aria-label="Itens do orcamento">
+          <thead><tr>
+            <th class="col-i">ITEM</th><th class="col-d">DESCRICAO</th><th class="col-q">QTD</th><th class="col-vu">V. UNITARIO</th><th class="col-vt">V. TOTAL</th><th class="col-act"></th>
+          </tr></thead>
           <tbody id="items-body"></tbody>
         </table>
       </div>
-      <button type="button" class="btn-add-row" id="btn-add-item">
-        + Adicionar Item
-      </button>
+      <button type="button" class="btn-add-row" id="btn-add-item">+ Adicionar Item</button>
     </fieldset>
 
-    <!-- OBS -->
+    <!-- ===== OBS ===== -->
     <fieldset class="form-section">
       <legend class="section-legend">Observacoes</legend>
       <div class="field">
-        <textarea id="observacoes" class="field-textarea" rows="3" placeholder="Observacoes adicionais para o cliente..."></textarea>
+        <textarea id="observacoes" class="field-textarea" rows="3" placeholder="Observacoes para o cliente..."></textarea>
       </div>
     </fieldset>
 
-    <!-- TOTAL -->
+    <!-- ===== TOTAL ===== -->
     <div class="summary-card">
       <div class="summary-amount">
         <span class="summary-label">VALOR TOTAL</span>
         <span class="summary-value" id="grand-total">R$ 0,00</span>
       </div>
-      <button type="submit" class="btn-generate" id="btn-gerar">
-        Gerar Orcamento PDF
-      </button>
-      <div id="form-message" style="display:none;margin-top:12px;"></div>
+      <button type="submit" class="btn-generate" id="btn-gerar">Gerar Orcamento PDF</button>
+      <div id="form-message" style="display:none;margin-top:12px"></div>
     </div>
   </form>
 </div>
 
-<!-- TOAST -->
-<div class="toast" id="toast" style="display:none;"></div>
+<!-- Toast -->
+<div class="toast" id="toast" style="display:none" role="status" aria-live="polite"></div>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="modal-sucesso" style="display:none;">
+<!-- Modal -->
+<div class="modal-overlay" id="modal-sucesso" style="display:none" role="dialog" aria-modal="true" aria-label="Orcamento gerado">
   <div class="modal-card">
     <div class="modal-icon">✓</div>
     <h2>Orcamento Gerado</h2>
     <p class="modal-protocol" id="modal-hash-id"></p>
     <div class="modal-actions">
-      <a href="#" id="link-download-pdf" class="btn btn-primary btn-lg" target="_blank">Baixar PDF</a>
+      <a href="#" id="link-download-pdf" class="btn btn-primary btn-lg" target="_blank" rel="noopener">Baixar PDF</a>
       <button class="btn btn-outline btn-lg" onclick="location.reload()">Novo Orcamento</button>
     </div>
   </div>
