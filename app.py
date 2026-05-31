@@ -2,7 +2,7 @@ import os
 import traceback
 from datetime import datetime, timedelta, timezone
 
-from flask import Flask, jsonify, redirect, render_template, request, send_file, url_for
+from flask import Flask, current_app, jsonify, redirect, render_template, request, send_file, url_for
 from sqlalchemy import func
 
 from config import Config
@@ -253,11 +253,29 @@ def confirmar_agendamento():
         orcamento.atualizado_em = _utcnow()
         db.session.commit()
 
-        # Disparar notificacao WhatsApp para os socios (nao bloqueia se falhar)
-        try:
-            notify_scheduling(orcamento, agendamento)
-        except Exception as wz_err:
-            print(f"[WHATSAPP] Erro ao notificar: {wz_err}", flush=True)
+        # Preparar dados para WhatsApp ANTES de sair da sessao
+        wz_data = {
+            "cliente_nome": orcamento.cliente.nome,
+            "cliente_empresa": orcamento.cliente.empresa or "",
+            "cliente_telefone": orcamento.cliente.telefone,
+            "cliente_endereco": orcamento.cliente.endereco,
+            "cliente_cidade": orcamento.cliente.cidade,
+            "data": agendamento.data_agendada.strftime("%d/%m/%Y"),
+            "hora": agendamento.periodo,
+            "valor": f"R$ {orcamento.valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+            "obs": (orcamento.observacoes or "Nenhuma").strip(),
+            "hash_id": orcamento.hash_id,
+            "servicos": "\n".join(
+                f"  - {i.descricao[:50]}: R$ {i.valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                for i in orcamento.itens
+            ),
+            "agendamento_id": agendamento.id,
+        }
+
+        import threading
+        _app = current_app._get_current_object()
+        t = threading.Thread(target=lambda: notify_scheduling(wz_data, _app), daemon=True)
+        t.start()
 
         return jsonify(
             {

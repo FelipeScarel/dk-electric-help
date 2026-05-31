@@ -5,6 +5,7 @@ __pycache__/
 pdf_output/*.pdf
 .env
 start.ps1
+.wpp/
 .wpp_session/
 .DS_Store
 Thumbs.db
