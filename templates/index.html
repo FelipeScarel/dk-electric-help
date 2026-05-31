@@ -1,64 +1,65 @@
 {% extends "base.html" %}
-{% block title %}Novo Orcamento - DK Electric Help{% endblock %}
+{% block title %}Novo Orcamento — DK Electric Help{% endblock %}
 {% block content %}
 <div class="form-page">
   <div class="form-header">
     <h1>Novo Orcamento</h1>
-    <p>Preencha os dados abaixo. Tempo estimado: menos de 2 minutos.</p>
+    <p>Preencha os dados do cliente e itens do servico. Tempo estimado: menos de 2 minutos.</p>
   </div>
 
-  <form id="form-orcamento" class="orcamento-form">
-    <!-- ===== DADOS DO CLIENTE ===== -->
+  <form id="form-orcamento" class="orcamento-form" autocomplete="off">
+    <!-- CLIENTE -->
     <fieldset class="form-section">
       <legend class="section-legend">Dados do Cliente</legend>
-      <div class="form-grid col2">
-        <div class="form-group span-2">
-          <label for="nome">Nome Completo <span class="required">*</span></label>
-          <input type="text" id="nome" name="nome" required placeholder="Nome completo do cliente">
+      <div class="form-grid cols-2">
+        <div class="field span-2">
+          <label class="field-label" for="nome">Nome Completo <span class="req">*</span></label>
+          <input type="text" id="nome" class="field-input" required placeholder="Nome completo do cliente" autocomplete="name">
         </div>
-        <div class="form-group">
-          <label for="empresa">Empresa</label>
-          <input type="text" id="empresa" name="empresa" placeholder="Nome da empresa (opcional)">
+        <div class="field">
+          <label class="field-label" for="empresa">Empresa</label>
+          <input type="text" id="empresa" class="field-input" placeholder="Nome da empresa (opcional)">
         </div>
-        <div class="form-group">
-          <label for="telefone">Telefone <span class="required">*</span></label>
-          <input type="tel" id="telefone" name="telefone" required placeholder="(11) 99999-9999">
+        <div class="field">
+          <label class="field-label" for="telefone">Telefone <span class="req">*</span></label>
+          <input type="tel" id="telefone" class="field-input" required placeholder="(11) 99999-9999" maxlength="15">
         </div>
       </div>
     </fieldset>
 
-    <!-- ===== ENDERECO ===== -->
+    <!-- ENDERECO -->
     <fieldset class="form-section">
       <legend class="section-legend">Endereco do Servico</legend>
-      <div class="form-grid col2">
-        <div class="form-group">
-          <label for="cep">CEP</label>
-          <input type="text" id="cep" name="cep" placeholder="00000-000" maxlength="9">
+      <div class="form-grid cols-2">
+        <div class="field">
+          <label class="field-label" for="cep">CEP</label>
+          <input type="text" id="cep" class="field-input" placeholder="00000-000" maxlength="9">
+          <span class="field-helper" id="cep-status"></span>
         </div>
-        <div class="form-group"></div>
-        <div class="form-group span-2">
-          <label for="endereco">Endereco <span class="required">*</span></label>
-          <input type="text" id="endereco" name="endereco" required placeholder="Rua, Avenida...">
+        <div class="field"></div>
+        <div class="field span-2">
+          <label class="field-label" for="endereco">Endereco <span class="req">*</span></label>
+          <input type="text" id="endereco" class="field-input" required placeholder="Rua, Avenida...">
         </div>
-        <div class="form-group">
-          <label for="numero">Numero</label>
-          <input type="text" id="numero" name="numero" placeholder="123">
+        <div class="field">
+          <label class="field-label" for="numero">Numero</label>
+          <input type="text" id="numero" class="field-input" placeholder="123">
         </div>
-        <div class="form-group">
-          <label for="complemento">Complemento</label>
-          <input type="text" id="complemento" name="complemento" placeholder="Apto, Bloco, Sala...">
+        <div class="field">
+          <label class="field-label" for="complemento">Complemento</label>
+          <input type="text" id="complemento" class="field-input" placeholder="Apto, Bloco, Sala...">
         </div>
-        <div class="form-group">
-          <label for="bairro">Bairro</label>
-          <input type="text" id="bairro" name="bairro" placeholder="Bairro">
+        <div class="field">
+          <label class="field-label" for="bairro">Bairro</label>
+          <input type="text" id="bairro" class="field-input" placeholder="Bairro">
         </div>
-        <div class="form-group">
-          <label for="cidade">Cidade <span class="required">*</span></label>
-          <input type="text" id="cidade" name="cidade" required placeholder="Cidade">
+        <div class="field">
+          <label class="field-label" for="cidade">Cidade <span class="req">*</span></label>
+          <input type="text" id="cidade" class="field-input" required placeholder="Cidade">
         </div>
-        <div class="form-group">
-          <label for="estado">Estado</label>
-          <select id="estado" name="estado">
+        <div class="field">
+          <label class="field-label" for="estado">Estado</label>
+          <select id="estado" class="field-select">
             <option value="">Selecione</option>
             <option value="SP">SP</option><option value="RJ">RJ</option><option value="MG">MG</option>
             <option value="PR">PR</option><option value="RS">RS</option><option value="SC">SC</option>
@@ -67,9 +68,9 @@
             <option value="MS">MS</option><option value="ES">ES</option>
           </select>
         </div>
-        <div class="form-group">
-          <label for="validade_dias">Validade da Proposta</label>
-          <select id="validade_dias" name="validade_dias">
+        <div class="field">
+          <label class="field-label" for="validade_dias">Validade</label>
+          <select id="validade_dias" class="field-select">
             <option value="7">7 dias</option>
             <option value="15" selected>15 dias</option>
             <option value="30">30 dias</option>
@@ -79,69 +80,63 @@
       </div>
     </fieldset>
 
-    <!-- ===== ITENS DO ORCAMENTO ===== -->
+    <!-- ITENS -->
     <fieldset class="form-section">
       <legend class="section-legend">Itens do Orcamento</legend>
-      <div class="table-wrapper">
+      <div class="table-shell">
         <table class="items-table" id="items-table">
           <thead>
             <tr>
-              <th class="col-item">ITEM</th>
-              <th class="col-desc">DESCRICAO</th>
-              <th class="col-qtd">QTD</th>
+              <th class="col-i">ITEM</th>
+              <th class="col-d">DESCRICAO</th>
+              <th class="col-q">QTD</th>
               <th class="col-vu">VALOR UNIT. (R$)</th>
               <th class="col-vt">VALOR TOTAL (R$)</th>
-              <th class="col-action"></th>
+              <th class="col-act"></th>
             </tr>
           </thead>
-          <tbody id="items-body">
-            <!-- Preenchido dinamicamente por JS -->
-          </tbody>
+          <tbody id="items-body"></tbody>
         </table>
       </div>
-      <button type="button" class="btn-add-item" id="btn-add-item">
-        + Adicionar Novo Item
+      <button type="button" class="btn-add-row" id="btn-add-item">
+        + Adicionar Item
       </button>
     </fieldset>
 
-    <!-- ===== OBSERVACOES ===== -->
+    <!-- OBS -->
     <fieldset class="form-section">
       <legend class="section-legend">Observacoes</legend>
-      <div class="form-group">
-        <textarea id="observacoes" name="observacoes" rows="3"
-                  placeholder="Observacoes adicionais para o cliente..."></textarea>
+      <div class="field">
+        <textarea id="observacoes" class="field-textarea" rows="3" placeholder="Observacoes adicionais para o cliente..."></textarea>
       </div>
     </fieldset>
 
-    <!-- ===== TOTAL E ACAO ===== -->
-    <div class="form-footer">
-      <div class="total-display">
-        <span class="total-label">VALOR TOTAL DO ORCAMENTO</span>
-        <span class="total-value" id="grand-total">R$ 0,00</span>
+    <!-- TOTAL -->
+    <div class="summary-card">
+      <div class="summary-amount">
+        <span class="summary-label">VALOR TOTAL</span>
+        <span class="summary-value" id="grand-total">R$ 0,00</span>
       </div>
-      <div class="form-actions">
-        <button type="submit" class="btn-gerar-pdf" id="btn-gerar">
-          Gerar e Enviar Orcamento PDF
-        </button>
-      </div>
-      <div id="form-message" class="form-message" style="display:none;"></div>
+      <button type="submit" class="btn-generate" id="btn-gerar">
+        Gerar Orcamento PDF
+      </button>
+      <div id="form-message" style="display:none;margin-top:12px;"></div>
     </div>
   </form>
 </div>
 
-<!-- Modal de sucesso -->
+<!-- TOAST -->
+<div class="toast" id="toast" style="display:none;"></div>
+
+<!-- MODAL -->
 <div class="modal-overlay" id="modal-sucesso" style="display:none;">
   <div class="modal-card">
-    <div class="modal-check">&#10003;</div>
-    <h2>Orcamento Gerado!</h2>
-    <p class="modal-hash">Codigo: <strong id="modal-hash-id"></strong></p>
+    <div class="modal-icon">✓</div>
+    <h2>Orcamento Gerado</h2>
+    <p class="modal-protocol" id="modal-hash-id"></p>
     <div class="modal-actions">
-      <a href="#" id="link-download-pdf" class="btn-primary" target="_blank" rel="noopener">
-        Baixar PDF
-      </a>
-      <button class="btn-secondary" onclick="location.reload()">
-        Novo Orcamento
-      </button>
+      <a href="#" id="link-download-pdf" class="btn btn-primary btn-lg" target="_blank">Baixar PDF</a>
+      <button class="btn btn-outline btn-lg" onclick="location.reload()">Novo Orcamento</button>
     </div>
   </div>
 </div>

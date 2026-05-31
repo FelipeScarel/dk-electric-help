@@ -2,34 +2,52 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<meta name="description" content="DK Electric Help - Sistema de Orcamentos para Engenharia Eletrica">
 <title>{% block title %}DK Electric Help{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<style>
+/* Critical CSS inline to prevent FOUC */
+.navbar{background:#0A0A0A;position:sticky;top:0;z-index:1000}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:62px}
+</style>
 {% block extra_head %}{% endblock %}
 </head>
 <body>
-<nav class="navbar">
+<nav class="navbar" role="navigation" aria-label="Navegacao principal">
   <div class="container nav-inner">
-    <a href="/" class="nav-brand">
+    <a href="/" class="nav-brand" aria-label="DK Electric Help - Pagina inicial">
       <img src="{{ url_for('static', filename='img/Logo.png') }}" alt="DK Electric Help" class="nav-logo-img">
     </a>
+
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu" aria-expanded="false" onclick="document.getElementById('nav-mobile').classList.toggle('open'); this.setAttribute('aria-expanded', document.getElementById('nav-mobile').classList.contains('open'));">
+      ☰
+    </button>
+
     <div class="nav-links">
-      <a href="/" class="nav-link">Novo Orcamento</a>
-      <a href="/orcamentos" class="nav-link">Orcamentos</a>
+      <a href="/" class="nav-link {{ 'active' if request.path == '/' }}">Novo Orcamento</a>
+      <a href="/orcamentos" class="nav-link {{ 'active' if request.path == '/orcamentos' }}">Painel</a>
     </div>
   </div>
+
+  <div class="nav-mobile" id="nav-mobile">
+    <a href="/" class="nav-link">Novo Orcamento</a>
+    <a href="/orcamentos" class="nav-link">Painel</a>
+  </div>
 </nav>
-<main class="container main-content">
+
+<main class="container main-content" role="main">
   {% block content %}{% endblock %}
 </main>
-<footer class="footer">
-  <div class="container footer-inner">
-    <span>&copy; 2026 DK Electric Help - Engenharia Eletrica</span>
-  </div>
+
+<footer class="footer" role="contentinfo">
+  <span>© 2026 DK Electric Help — Engenharia Eletrica de Precisao</span>
 </footer>
+
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>

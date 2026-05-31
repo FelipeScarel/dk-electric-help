@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Painel - DK Electric Help{% endblock %}
+{% block title %}Painel — DK Electric Help{% endblock %}
 {% block content %}
 <div class="admin-page">
-  <!-- Stats Dashboard -->
+  <!-- Stats -->
   <div class="stats-grid">
     <div class="stat-card">
       <div class="stat-icon">📋</div>
@@ -26,36 +26,37 @@
     </div>
   </div>
 
+  <!-- Header -->
   <div class="admin-header">
     <div>
       <h1>Orcamentos Recentes</h1>
       <p>{{ orcamentos|length }} resultado(s)</p>
     </div>
     <div class="admin-header-actions">
-      <a href="/" class="btn-primary">+ Novo Orcamento</a>
+      <a href="/" class="btn btn-danger">+ Novo Orcamento</a>
     </div>
   </div>
 
-  <!-- Barra de busca e filtros -->
+  <!-- Toolbar -->
   <div class="admin-toolbar">
     <div class="admin-search">
-      <input type="text" id="admin-search" placeholder="Buscar por cliente, codigo, cidade ou telefone..." autocomplete="off">
+      <input type="text" id="admin-search" placeholder="Buscar por cliente, protocolo, cidade..." autocomplete="off" aria-label="Buscar orcamentos">
     </div>
     <div class="admin-filters">
-      <select id="filter-status">
+      <select id="filter-status" aria-label="Filtrar por status">
         <option value="">Todos os status</option>
         <option value="PENDENTE">Pendente</option>
-        <option value="APROVADO_PELO_CLIENTE">Aprovado pelo Cliente</option>
+        <option value="APROVADO_PELO_CLIENTE">Aprovado Cliente</option>
         <option value="AGENDADO">Agendado</option>
         <option value="CONCLUIDO">Concluido</option>
         <option value="CANCELADO">Cancelado</option>
       </select>
-      <select id="filter-periodo">
+      <select id="filter-periodo" aria-label="Filtrar por periodo">
         <option value="">Qualquer periodo</option>
-        <option value="7">Ultimos 7 dias</option>
-        <option value="30">Ultimos 30 dias</option>
-        <option value="60">Ultimos 60 dias</option>
-        <option value="90">Ultimos 90 dias</option>
+        <option value="7">7 dias</option>
+        <option value="30">30 dias</option>
+        <option value="60">60 dias</option>
+        <option value="90">90 dias</option>
       </select>
       <span class="filter-count" id="filter-count"></span>
     </div>
@@ -74,23 +75,22 @@
          data-data="{{ o.criado_em.isoformat() }}">
       <div class="admin-card-top">
         <div>
-          <div class="admin-hash">{{ o.hash_id }}</div>
-          <div class="admin-data-emissao">{{ o.criado_em.strftime('%d/%m/%Y %H:%M') }}</div>
+          <div class="admin-protocol">{{ o.hash_id }}</div>
+          <div class="admin-date">{{ o.criado_em.strftime('%d/%m/%Y %H:%M') }}</div>
         </div>
-        <div class="admin-card-actions-top">
-          <a href="{{ url_for('download_pdf', hash_id=o.hash_id) }}" class="btn-icon" title="Baixar PDF">&#128196;</a>
-          <button class="btn-icon btn-revisao" data-hash="{{ o.hash_id }}" title="Criar Revisao">&#128260;</button>
-          <select class="status-select" data-hash="{{ o.hash_id }}" onchange="mudarStatus(this)">
+        <div class="admin-card-actions">
+          <a href="{{ url_for('download_pdf', hash_id=o.hash_id) }}" class="btn-icon" title="Baixar PDF" aria-label="Baixar PDF">📄</a>
+          <button class="btn-icon btn-revisao" data-hash="{{ o.hash_id }}" title="Duplicar" aria-label="Criar revisao">📋</button>
+          <select class="status-pill" data-hash="{{ o.hash_id }}" onchange="mudarStatus(this)" aria-label="Alterar status">
             <option value="PENDENTE" {% if o.status == 'PENDENTE' %}selected{% endif %}>Pendente</option>
-            <option value="APROVADO_PELO_CLIENTE" {% if o.status == 'APROVADO_PELO_CLIENTE' %}selected{% endif %}>Aprovado Cliente</option>
+            <option value="APROVADO_PELO_CLIENTE" {% if o.status == 'APROVADO_PELO_CLIENTE' %}selected{% endif %}>Aprovado</option>
             <option value="AGENDADO" {% if o.status == 'AGENDADO' %}selected{% endif %}>Agendado</option>
             <option value="CONCLUIDO" {% if o.status == 'CONCLUIDO' %}selected{% endif %}>Concluido</option>
             <option value="CANCELADO" {% if o.status == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
           </select>
-          <button class="btn-icon btn-danger" data-hash="{{ o.hash_id }}" title="Excluir Orcamento" onclick="excluirOrcamento('{{ o.hash_id }}')">&#10005;</button>
+          <button class="btn-icon danger" data-hash="{{ o.hash_id }}" title="Excluir" aria-label="Excluir orcamento" onclick="excluirOrcamento('{{ o.hash_id }}')">✕</button>
         </div>
       </div>
-
       <div class="admin-card-body">
         <div class="admin-field">
           <span class="admin-label">Cliente</span>
@@ -100,11 +100,9 @@
           <span class="admin-label">Telefone</span>
           <span class="admin-value">{{ o.cliente.telefone }}</span>
         </div>
-        <div class="admin-field admin-field-full">
+        <div class="admin-field wide">
           <span class="admin-label">Endereco</span>
-          <span class="admin-value">
-            {{ o.cliente.endereco }}{% if o.cliente.numero %}, {{ o.cliente.numero }}{% endif %}{% if o.cliente.complemento %} - {{ o.cliente.complemento }}{% endif %}{% if o.cliente.bairro %} - {{ o.cliente.bairro }}{% endif %}
-          </span>
+          <span class="admin-value">{{ o.cliente.endereco }}{% if o.cliente.numero %}, {{ o.cliente.numero }}{% endif %}{% if o.cliente.complemento %} — {{ o.cliente.complemento }}{% endif %}{% if o.cliente.bairro %} — {{ o.cliente.bairro }}{% endif %}</span>
         </div>
         <div class="admin-field">
           <span class="admin-label">Cidade</span>
@@ -115,44 +113,36 @@
           <span class="admin-value">{{ o.data_validade.strftime('%d/%m/%Y') }}</span>
         </div>
       </div>
-
       <div class="admin-card-footer">
         <div class="admin-dates">
           {% if o.agendamento %}
-          <div class="admin-date-row">
-            <span>Agendado</span>
-            <strong>{{ o.agendamento.data_agendada.strftime('%d/%m/%Y') }} {{ o.agendamento.periodo }}</strong>
-          </div>
+          <div class="admin-date-row"><span>Agendado</span><strong>{{ o.agendamento.data_agendada.strftime('%d/%m/%Y') }} {{ o.agendamento.periodo }}</strong></div>
           {% endif %}
-          <div class="admin-date-row">
-            <span>Itens</span>
-            <strong>{{ o.itens|length }}</strong>
-          </div>
+          <div class="admin-date-row"><span>Itens</span><strong>{{ o.itens|length }}</strong></div>
         </div>
-
-        <div class="admin-value-total">
-          R$ {{ "%.2f"|format(o.valor_total) }}
-        </div>
+        <div class="admin-card-value">R$ {{ "%.2f"|format(o.valor_total) }}</div>
       </div>
     </div>
     {% endfor %}
   </div>
   {% else %}
   <div class="empty-state">
+    <div class="empty-state-icon">📭</div>
     <p>Nenhum orcamento gerado ainda.</p>
-    <a href="/" class="btn-primary">Criar Primeiro Orcamento</a>
+    <a href="/" class="btn btn-danger btn-lg">Criar Primeiro Orcamento</a>
   </div>
   {% endif %}
 </div>
 
-<!-- Modal de confirmacao para excluir -->
+<!-- Modal confirmacao -->
 <div class="modal-overlay" id="modal-confirm" style="display:none;">
   <div class="modal-card">
-    <h2>Tem certeza?</h2>
-    <p style="color:#666;margin:12px 0 20px;font-size:0.9rem;">Esta acao nao pode ser desfeita. O orcamento <strong id="confirm-hash"></strong> sera permanentemente removido.</p>
+    <div class="modal-icon">!</div>
+    <h2>Confirmar Exclusao</h2>
+    <p style="color:var(--color-gray-500);margin:8px 0 20px;">O orcamento <strong id="confirm-hash" style="font-family:var(--font-mono);"></strong> sera permanentemente removido.</p>
     <div class="modal-actions">
-      <button class="btn-secondary" onclick="fecharModal()">Cancelar</button>
-      <button class="btn-primary" style="background:#D60000;" id="btn-confirmar-exclusao" onclick="confirmarExclusao()">Sim, Excluir</button>
+      <button class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirmar-exclusao" onclick="confirmarExclusao()">Sim, Excluir</button>
     </div>
   </div>
 </div>
@@ -160,7 +150,6 @@
 
 {% block extra_scripts %}
 <script>
-// ---------- BUSCA E FILTROS ----------
 (function () {
   var searchInput = document.getElementById("admin-search");
   var statusFilter = document.getElementById("filter-status");
@@ -177,35 +166,25 @@
 
     cards.forEach(function (card) {
       var show = true;
-
-      // Filtro texto
       if (termo) {
-        var nome = card.getAttribute("data-nome") || "";
-        var empresa = card.getAttribute("data-empresa") || "";
-        var cidade = card.getAttribute("data-cidade") || "";
-        var telefone = card.getAttribute("data-telefone") || "";
-        var hash = card.getAttribute("data-hash") || "";
-        var texto = nome + " " + empresa + " " + cidade + " " + telefone + " " + hash;
+        var texto = (card.getAttribute("data-nome") || "") + " " +
+                    (card.getAttribute("data-empresa") || "") + " " +
+                    (card.getAttribute("data-cidade") || "") + " " +
+                    (card.getAttribute("data-telefone") || "") + " " +
+                    (card.getAttribute("data-hash") || "");
         if (texto.indexOf(termo) === -1) show = false;
       }
-
-      // Filtro status
       if (status && card.getAttribute("data-status") !== status) show = false;
-
-      // Filtro periodo
       if (dias > 0) {
         var dataStr = card.getAttribute("data-data");
         if (dataStr) {
-          var data = new Date(dataStr);
-          var diff = (agora - data) / (1000 * 60 * 60 * 24);
+          var diff = (agora - new Date(dataStr)) / (1000 * 60 * 60 * 24);
           if (diff > dias) show = false;
         }
       }
-
       card.style.display = show ? "" : "none";
       if (show) visiveis++;
     });
-
     countEl.textContent = visiveis + " de " + cards.length;
   }
 
@@ -215,49 +194,36 @@
   aplicarFiltros();
 })();
 
-// ---------- MUDAR STATUS ----------
-function mudarStatus(selectEl) {
-  var hash = selectEl.getAttribute("data-hash");
-  var novoStatus = selectEl.value;
-
+function mudarStatus(el) {
+  var hash = el.getAttribute("data-hash");
   fetch("/api/orcamentos/" + hash + "/status", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: novoStatus }),
-  })
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-      if (data.status === "updated") {
+    body: JSON.stringify({ status: el.value }),
+  }).then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.status === "updated") {
         var card = document.querySelector('.admin-card[data-hash="' + hash + '"]');
-        if (card) card.setAttribute("data-status", novoStatus);
+        if (card) card.setAttribute("data-status", el.value);
       }
-    })
-    .catch(function () { selectEl.value = selectEl.getAttribute("data-original"); });
+    }).catch(function () {});
 }
 
-// ---------- CRIAR REVISAO ----------
 document.querySelectorAll(".btn-revisao").forEach(function (btn) {
   btn.addEventListener("click", function () {
     var hash = btn.getAttribute("data-hash");
     btn.disabled = true;
-    btn.textContent = "...";
-
     fetch("/api/orcamentos/" + hash + "/revisao", { method: "POST", headers: { "Content-Type": "application/json" } })
       .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (data.hash_id) {
-          alert("Revisao criada: " + data.hash_id);
-          location.reload();
-        } else {
-          alert("Erro: " + (data.error || "desconhecido"));
-        }
+      .then(function (d) {
+        if (d.hash_id) { location.reload(); }
+        else { alert("Erro: " + (d.error || "desconhecido")); }
       })
       .catch(function () { alert("Erro ao criar revisao."); })
-      .finally(function () { btn.disabled = false; btn.textContent = "🐞"; });
+      .finally(function () { btn.disabled = false; });
   });
 });
 
-// ---------- EXCLUIR ----------
 var hashParaExcluir = null;
 function excluirOrcamento(hash) {
   hashParaExcluir = hash;
@@ -271,28 +237,23 @@ function fecharModal() {
 function confirmarExclusao() {
   if (!hashParaExcluir) return;
   var hash = hashParaExcluir;
-  document.getElementById("btn-confirmar-exclusao").disabled = true;
-  document.getElementById("btn-confirmar-exclusao").textContent = "Excluindo...";
-
+  var btn = document.getElementById("btn-confirmar-exclusao");
+  btn.disabled = true; btn.textContent = "Excluindo...";
   fetch("/api/orcamentos/" + hash, { method: "DELETE" })
     .then(function (r) { return r.json(); })
-    .then(function (data) {
-      if (data.status === "deleted") {
+    .then(function (d) {
+      if (d.status === "deleted") {
         var card = document.querySelector('.admin-card[data-hash="' + hash + '"]');
-        if (card) card.remove();
+        if (card) { card.style.opacity = "0"; card.style.transform = "scale(0.95)"; card.style.transition = "all 200ms ease"; setTimeout(function () { card.remove(); }, 250); }
         fecharModal();
-        // Atualiza contagem
-        var total = document.querySelectorAll(".admin-card").length;
-        document.querySelector(".admin-header p").textContent = total + " orcamento(s) encontrado(s)";
-        var ev = new Event("input");
-        document.getElementById("admin-search").dispatchEvent(ev);
+        setTimeout(function () {
+          document.querySelector(".admin-header p").textContent = document.querySelectorAll(".admin-card").length + " resultado(s)";
+          document.getElementById("admin-search").dispatchEvent(new Event("input"));
+        }, 300);
       }
     })
     .catch(function () { alert("Erro ao excluir."); })
-    .finally(function () {
-      document.getElementById("btn-confirmar-exclusao").disabled = false;
-      document.getElementById("btn-confirmar-exclusao").textContent = "Sim, Excluir";
-    });
+    .finally(function () { btn.disabled = false; btn.textContent = "Sim, Excluir"; });
 }
 </script>
 {% endblock %}

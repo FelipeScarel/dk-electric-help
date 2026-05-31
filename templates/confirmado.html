@@ -1,19 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Servico Agendado - DK Electric Help{% endblock %}
+{% block title %}Agendado — DK Electric Help{% endblock %}
 {% block content %}
 <div class="confirm-page">
   <div class="confirm-card">
-    <div class="confirm-check">&#10003;</div>
-    <h1>Servico Agendado com Sucesso!</h1>
+    <div class="confirm-icon">✓</div>
+    <h1>Servico Agendado!</h1>
     <p class="confirm-sub">
-      Seu orcamento <strong>{{ orcamento.hash_id }}</strong> foi aprovado e o servico
-      esta confirmado para a data abaixo.
+      O protocolo <strong>{{ orcamento.hash_id }}</strong> foi aprovado e o servico esta confirmado.
     </p>
-
     <div class="confirm-details">
       <div class="confirm-row">
-        <span class="confirm-label">Orcamento</span>
-        <span class="confirm-value">{{ orcamento.hash_id }}</span>
+        <span class="confirm-label">Protocolo</span>
+        <span class="confirm-value hl">{{ orcamento.hash_id }}</span>
       </div>
       <div class="confirm-row">
         <span class="confirm-label">Cliente</span>
@@ -21,22 +19,17 @@
       </div>
       {% if agendamento %}
       <div class="confirm-row">
-        <span class="confirm-label">Data Agendada</span>
-        <span class="confirm-value highlight">{{ agendamento.data_agendada.strftime('%d/%m/%Y') }}</span>
+        <span class="confirm-label">Data</span>
+        <span class="confirm-value hl">{{ agendamento.data_agendada.strftime('%d/%m/%Y') }}</span>
       </div>
       <div class="confirm-row">
         <span class="confirm-label">Horario</span>
-        <span class="confirm-value highlight">{{ agendamento.periodo }}</span>
+        <span class="confirm-value hl">{{ agendamento.periodo }}</span>
       </div>
       {% endif %}
     </div>
-
-    <p class="confirm-note">
-      Nossa equipe entrara em contato pelo telefone
-      <strong>{{ orcamento.cliente.telefone }}</strong> para confirmar os detalhes.
-    </p>
-
-    <a href="/" class="btn-primary">Voltar ao Inicio</a>
+    <p class="confirm-note">Nossa equipe entrara em contato pelo telefone <strong>{{ orcamento.cliente.telefone }}</strong>.</p>
+    <a href="/" class="btn btn-primary btn-lg">Voltar ao Inicio</a>
   </div>
 </div>
 {% endblock %}

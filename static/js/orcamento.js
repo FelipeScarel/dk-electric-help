@@ -3,38 +3,113 @@
 
   var tbody = document.getElementById("items-body");
   var grandTotalEl = document.getElementById("grand-total");
-  var formMessage = document.getElementById("form-message");
   var itemCounter = 0;
+
+  // ============================================================
+  // TOAST NOTIFICATION
+  // ============================================================
+  function toast(msg, type) {
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.className = "toast " + (type || "success");
+    el.style.display = "flex";
+    el.style.animation = "none";
+    el.offsetHeight; // reflow
+    el.style.animation = "slideUp 0.3s ease";
+    clearTimeout(el._timeout);
+    el._timeout = setTimeout(function () {
+      el.style.animation = "fadeOut 0.3s ease";
+      setTimeout(function () { el.style.display = "none"; }, 280);
+    }, 4000);
+  }
+
+  // ============================================================
+  // PHONE MASK
+  // ============================================================
+  document.getElementById("telefone").addEventListener("input", function (e) {
+    var v = e.target.value.replace(/\D/g, "");
+    if (v.length > 11) v = v.slice(0, 11);
+    if (v.length > 0) v = "(" + v;
+    if (v.length > 3) v = v.slice(0, 3) + ") " + v.slice(3);
+    if (v.length > 10) v = v.slice(0, 10) + "-" + v.slice(10);
+    e.target.value = v;
+  });
+
+  // ============================================================
+  // CEP AUTOCOMPLETE
+  // ============================================================
+  var cepTimer = null;
+  document.getElementById("cep").addEventListener("input", function (e) {
+    var v = e.target.value.replace(/\D/g, "");
+    if (v.length > 8) v = v.slice(0, 8);
+    if (v.length > 5) v = v.slice(0, 5) + "-" + v.slice(5);
+    e.target.value = v;
+
+    var status = document.getElementById("cep-status");
+    if (v.replace(/\D/g, "").length === 8) {
+      status.textContent = "Buscando...";
+      clearTimeout(cepTimer);
+      cepTimer = setTimeout(function () {
+        fetch("https://viacep.com.br/ws/" + v.replace(/\D/g, "") + "/json/")
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.erro) { status.textContent = "CEP nao encontrado"; return; }
+            document.getElementById("endereco").value = data.logradouro || "";
+            document.getElementById("bairro").value = data.bairro || "";
+            document.getElementById("cidade").value = data.localidade || "";
+            document.getElementById("estado").value = data.uf || "";
+            status.textContent = data.localidade ? "CEP encontrado: " + data.localidade + "/" + data.uf : "";
+            status.style.color = "var(--color-success)";
+            toast("Endereco preenchido automaticamente", "success");
+          })
+          .catch(function () { status.textContent = "Erro ao buscar CEP"; });
+      }, 600);
+    } else if (v.length > 0) {
+      status.textContent = v.length < 9 ? "Digite o CEP completo" : "";
+    }
+  });
+
+  // ============================================================
+  // ITEMS TABLE
+  // ============================================================
+  function formatBRL(val) {
+    return "R$ " + val.toFixed(2).replace(".", ",");
+  }
 
   function addItemRow() {
     itemCounter++;
     var row = document.createElement("tr");
     row.innerHTML =
-      '<td><input type="text" class="inp-item" placeholder="1" maxlength="10"></td>' +
-      '<td><input type="text" class="inp-desc" placeholder="Descricao do servico/material"></td>' +
-      '<td><input type="number" class="inp-qtd" value="1" min="1" step="1"></td>' +
-      '<td><input type="number" class="inp-vu" value="0.00" min="0" step="0.01"></td>' +
-      '<td><span class="vt-readonly">R$ 0,00</span></td>' +
-      '<td><button type="button" class="btn-remove-item" title="Remover">&times;</button></td>';
+      '<td><input type="text" class="inp-item" placeholder="1" maxlength="10" aria-label="Numero do item"></td>' +
+      '<td><input type="text" class="inp-desc" placeholder="Descricao do servico ou material" aria-label="Descricao"></td>' +
+      '<td><input type="number" class="inp-qtd" value="1" min="1" step="1" aria-label="Quantidade"></td>' +
+      '<td><input type="number" class="inp-vu" value="0.00" min="0" step="0.01" aria-label="Valor unitario"></td>' +
+      '<td><span class="item-total-readonly">' + formatBRL(0) + '</span></td>' +
+      '<td><button type="button" class="btn-remove-row" title="Remover item" aria-label="Remover item">&times;</button></td>';
     tbody.appendChild(row);
 
-    var qtdInput = row.querySelector(".inp-qtd");
-    var vuInput = row.querySelector(".inp-vu");
-    var vtSpan = row.querySelector(".vt-readonly");
+    var qtdInp = row.querySelector(".inp-qtd");
+    var vuInp = row.querySelector(".inp-vu");
+    var totalSpan = row.querySelector(".item-total-readonly");
 
     function recalc() {
-      var q = parseFloat(qtdInput.value) || 0;
-      var vu = parseFloat(vuInput.value) || 0;
-      vtSpan.textContent = "R$ " + (q * vu).toFixed(2).replace(".", ",");
+      var q = parseFloat(qtdInp.value) || 0;
+      var vu = parseFloat(vuInp.value) || 0;
+      totalSpan.textContent = formatBRL(q * vu);
       recalcGrandTotal();
     }
 
-    qtdInput.addEventListener("input", recalc);
-    vuInput.addEventListener("input", recalc);
-    row.querySelector(".btn-remove-item").addEventListener("click", function () {
-      row.remove();
-      recalcGrandTotal();
-      if (tbody.children.length === 0) addItemRow();
+    qtdInp.addEventListener("input", recalc);
+    vuInp.addEventListener("input", recalc);
+    row.querySelector(".btn-remove-row").addEventListener("click", function () {
+      row.style.opacity = "0";
+      row.style.transform = "translateX(-10px)";
+      row.style.transition = "all 200ms ease";
+      setTimeout(function () {
+        row.remove();
+        recalcGrandTotal();
+        if (tbody.children.length === 0) addItemRow();
+      }, 200);
     });
     recalc();
   }
@@ -46,10 +121,10 @@
       var vu = parseFloat(row.querySelector(".inp-vu").value) || 0;
       total += q * vu;
     });
-    grandTotalEl.textContent = "R$ " + total.toFixed(2).replace(".", ",");
+    grandTotalEl.textContent = formatBRL(total);
   }
 
-  function collectFormData() {
+  function collectItems() {
     var itens = [];
     tbody.querySelectorAll("tr").forEach(function (row) {
       var desc = row.querySelector(".inp-desc").value.trim();
@@ -67,29 +142,20 @@
     return itens;
   }
 
-  function showMessage(msg, type) {
-    formMessage.style.display = "block";
-    formMessage.className = "form-message " + type;
-    formMessage.textContent = msg;
-    setTimeout(function () { formMessage.style.display = "none"; }, 5000);
-  }
-
-  function hideMessage() {
-    formMessage.style.display = "none";
-  }
-
-  // ---------- SUBMISSAO ----------
+  // ============================================================
+  // FORM SUBMIT
+  // ============================================================
   document.getElementById("btn-add-item").addEventListener("click", addItemRow);
 
   document.getElementById("form-orcamento").addEventListener("submit", function (e) {
     e.preventDefault();
-    hideMessage();
 
-    var btn = document.getElementById("btn-gerar");
+    var msgEl = document.getElementById("form-message");
+    msgEl.style.display = "none";
 
-    var itens = collectFormData();
+    var itens = collectItems();
     if (itens.length === 0) {
-      showMessage("Adicione pelo menos um item com descricao e quantidade.", "error");
+      toast("Adicione pelo menos um item com descricao e quantidade.", "warning");
       return;
     }
 
@@ -110,12 +176,13 @@
     };
 
     if (!payload.nome || !payload.telefone || !payload.endereco || !payload.cidade) {
-      showMessage("Preencha todos os campos obrigatorios do cliente.", "error");
+      toast("Preencha todos os campos obrigatorios.", "warning");
       return;
     }
 
+    var btn = document.getElementById("btn-gerar");
     btn.disabled = true;
-    btn.textContent = "Gerando PDF...";
+    btn.innerHTML = '<span class="skeleton" style="display:inline-block;width:20px;height:20px;border-radius:50%;"></span> Gerando PDF...';
 
     fetch("/api/orcamentos", {
       method: "POST",
@@ -123,34 +190,31 @@
       body: JSON.stringify(payload),
     })
       .then(function (r) {
+        var ct = r.headers.get("Content-Type") || "";
         if (!r.ok) {
-          // Tenta extrair erro como JSON; se falhar, devolve o status HTTP
-          var ct = r.headers.get("Content-Type") || "";
           if (ct.indexOf("application/json") !== -1) {
             return r.json().then(function (d) { throw new Error(d.error || "Erro " + r.status); });
           }
-          throw new Error("Erro do servidor (HTTP " + r.status + "). Tente novamente.");
+          throw new Error("Erro do servidor. Tente novamente.");
         }
         return r.json();
       })
       .then(function (data) {
-        // Mostrar modal
         document.getElementById("modal-hash-id").textContent = data.hash_id;
         document.getElementById("link-download-pdf").href = "/pdf/" + data.hash_id;
         document.getElementById("modal-sucesso").style.display = "flex";
-
-        // Baixar o PDF: abre em nova aba, o Content-Disposition: attachment faz o browser baixar
+        toast("Orcamento " + data.hash_id + " gerado com sucesso!", "success");
         window.open("/pdf/" + data.hash_id, "_blank");
       })
       .catch(function (err) {
-        showMessage(err.message || "Erro de conexao. Verifique o servidor.", "error");
+        toast(err.message || "Erro ao gerar orcamento.", "error");
       })
       .finally(function () {
         btn.disabled = false;
-        btn.textContent = "Gerar e Enviar Orcamento PDF";
+        btn.textContent = "Gerar Orcamento PDF";
       });
   });
 
-  // ---------- INICIA COM 1 LINHA ----------
+  // Start with 1 row
   addItemRow();
 })();

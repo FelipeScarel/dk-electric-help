@@ -1,15 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Agendar Servico - DK Electric Help{% endblock %}
+{% block title %}Agendar Servico — DK Electric Help{% endblock %}
 {% block content %}
 <div class="schedule-page">
   <div class="schedule-header">
     <h1>Agendar Servico</h1>
-    <div class="orcamento-ref">Orcamento {{ orcamento.hash_id }}</div>
-    <p>Selecione a data e horario para execucao do servico.</p>
+    <div class="schedule-badge">{{ orcamento.hash_id }}</div>
+    <p>Selecione a data e horario desejados para execucao do servico.</p>
   </div>
 
   <div class="schedule-grid">
-    <div class="calendar-panel">
+    <div class="schedule-panel">
       <h3>Horarios Disponiveis</h3>
       <div class="slots-list" id="slots-list">
         {% if slots %}
@@ -19,52 +19,40 @@
             {% if day_str != prev_day %}
               <div class="day-header">{{ day_str }}</div>
             {% endif %}
-            <div class="slot-card"
-                 data-slot-id="{{ slot.id }}"
-                 data-date="{{ slot.data.isoformat() }}"
-                 data-time="{{ slot.hora_inicio.strftime('%H:%M') }} - {{ slot.hora_fim.strftime('%H:%M') }}"
-                 onclick="selectSlot(this)">
+            <button class="slot-btn"
+                    data-slot-id="{{ slot.id }}"
+                    data-date="{{ slot.data.isoformat() }}"
+                    data-time="{{ slot.hora_inicio.strftime('%H:%M') }} - {{ slot.hora_fim.strftime('%H:%M') }}"
+                    onclick="selectSlot(this)"
+                    aria-label="Selecionar horario {{ slot.hora_inicio.strftime('%H:%M') }}">
               <span class="slot-date">{{ slot.data.strftime('%d/%m') }}</span>
               <span class="slot-time">{{ slot.hora_inicio.strftime('%H:%M') }} - {{ slot.hora_fim.strftime('%H:%M') }}</span>
-            </div>
+            </button>
             {% set prev_day = day_str %}
           {% endfor %}
         {% else %}
-          <div class="no-slots">Nenhum horario disponivel no momento. Entre em contato: {{ config.COMPANY_PHONE }}</div>
+          <div class="no-slots">Nenhum horario disponivel. Entre em contato: {{ config.COMPANY_PHONE }}</div>
         {% endif %}
       </div>
     </div>
 
-    <div class="resumo-panel">
-      <h3>Resumo do Orcamento</h3>
-      <div class="resumo-item">
-        <span class="resumo-label">Cliente</span>
-        <span class="resumo-value">{{ orcamento.cliente.nome }}</span>
-      </div>
-      <div class="resumo-item">
-        <span class="resumo-label">Endereco</span>
-        <span class="resumo-value">{{ orcamento.cliente.endereco }}</span>
-      </div>
-      <div class="resumo-item">
-        <span class="resumo-label">Cidade</span>
-        <span class="resumo-value">{{ orcamento.cliente.cidade }}</span>
-      </div>
-      <div class="resumo-item">
-        <span class="resumo-label">Validade</span>
-        <span class="resumo-value">{{ orcamento.data_validade.strftime('%d/%m/%Y') }}</span>
-      </div>
-      <div class="resumo-total">R$ {{ "%.2f"|format(orcamento.valor_total) }}</div>
+    <div class="schedule-panel">
+      <h3>Resumo</h3>
+      <div class="rsm-row"><span class="rsm-label">Cliente</span><span class="rsm-value">{{ orcamento.cliente.nome }}</span></div>
+      <div class="rsm-row"><span class="rsm-label">Endereco</span><span class="rsm-value">{{ orcamento.cliente.endereco }}</span></div>
+      <div class="rsm-row"><span class="rsm-label">Cidade</span><span class="rsm-value">{{ orcamento.cliente.cidade }}</span></div>
+      <div class="rsm-row"><span class="rsm-label">Validade</span><span class="rsm-value">{{ orcamento.data_validade.strftime('%d/%m/%Y') }}</span></div>
+      <div class="rsm-total">R$ {{ "%.2f"|format(orcamento.valor_total) }}</div>
 
-      <div class="selected-info" id="selected-info" style="display:none;">
-        Selecionado: <span id="selected-date-text"></span>
+      <div class="selected-indicator" id="selected-info" style="display:none;">
+        Selecionado:<strong id="selected-date-text"></strong>
       </div>
 
-      <button class="btn-confirmar" id="btn-confirmar" disabled
+      <button class="btn-schedule-confirm" id="btn-confirmar" disabled
               data-hash="{{ orcamento.hash_id }}">
         Confirmar Agendamento
       </button>
-
-      <div class="schedule-message" id="schedule-message"></div>
+      <div id="schedule-message" class="schedule-message" style="display:none;"></div>
     </div>
   </div>
 </div>
@@ -76,7 +64,7 @@
   var selectedSlotId = null;
 
   window.selectSlot = function (el) {
-    document.querySelectorAll('.slot-card').forEach(function (c) { c.classList.remove('selected'); });
+    document.querySelectorAll('.slot-btn').forEach(function (c) { c.classList.remove('selected'); });
     el.classList.add('selected');
     selectedSlotId = el.getAttribute('data-slot-id');
     document.getElementById('selected-date-text').textContent =
@@ -91,7 +79,6 @@
     btn.disabled = true;
     btn.textContent = 'Confirmando...';
     var msgEl = document.getElementById('schedule-message');
-    msgEl.className = 'schedule-message';
     msgEl.style.display = 'none';
 
     fetch('/api/agendar', {
@@ -104,18 +91,13 @@
     })
     .then(function (r) {
       var ct = r.headers.get('Content-Type') || '';
-      if (ct.indexOf('application/json') !== -1) {
+      if (ct.indexOf('application/json') !== -1)
         return r.json().then(function (d) { return { status: r.status, body: d }; });
-      }
-      throw new Error('Erro do servidor (HTTP ' + r.status + '). Tente novamente.');
+      throw new Error('Erro do servidor (HTTP ' + r.status + ')');
     })
     .then(function (result) {
       if (result.status === 200) {
-        // Abre WhatsApp com a mensagem pronta
-        if (result.body.whatsapp_url) {
-          window.open(result.body.whatsapp_url, '_blank');
-        }
-        // Redireciona para confirmacao
+        if (result.body.whatsapp_url) window.open(result.body.whatsapp_url, '_blank');
         window.location.href = '/agendamento-confirmado?hash_id=' + btn.getAttribute('data-hash');
       } else {
         msgEl.className = 'schedule-message error';
@@ -127,7 +109,7 @@
     })
     .catch(function (err) {
       msgEl.className = 'schedule-message error';
-      msgEl.textContent = err.message || 'Erro de conexao. Tente novamente.';
+      msgEl.textContent = err.message || 'Erro de conexao.';
       msgEl.style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Confirmar Agendamento';

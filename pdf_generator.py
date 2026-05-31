@@ -348,6 +348,7 @@ def generate_orcamento_pdf(orcamento, output_path=None, base_url=None):
     c = canvas.Canvas(output_path, pagesize=A4)
     c.setTitle(f"Protocolo DK {orcamento.hash_id}")
     c.setAuthor("DK Electric Help")
+    c.setSubject(f"Orcamento {orcamento.hash_id}")
 
     # ========== PAGINA 1 ==========
     y = PAGE_H - MARGIN
