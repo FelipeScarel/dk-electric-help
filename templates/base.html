@@ -3,45 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0A0A0A">
-<meta name="description" content="DK Electric Help — Plataforma profissional de orcamentos para engenharia eletrica">
+<meta name="theme-color" content="#080808">
 <title>{% block title %}DK Electric Help{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-<style>
-.navbar{background:rgba(10,10,10,0.92);position:sticky;top:0;z-index:1000}
-.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
-</style>
 {% block extra_head %}{% endblock %}
 </head>
 <body>
-<nav class="navbar" role="navigation" aria-label="Principal">
-  <div class="container nav-inner">
-    <a href="/" class="nav-brand" aria-label="DK Electric Help — Inicio">
-      <img src="{{ url_for('static', filename='img/Logo.png') }}" alt="DK Electric Help" class="nav-logo-img" width="auto" height="42">
-    </a>
-    <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false" onclick="var m=document.getElementById('nav-mobile');m.classList.toggle('open');this.setAttribute('aria-expanded',m.classList.contains('open'))">☰</button>
-    <div class="nav-links">
-      <a href="/" class="nav-link {{ 'active' if request.path == '/' }}">Orcamento</a>
-      <a href="/orcamentos" class="nav-link {{ 'active' if request.path == '/orcamentos' }}">Painel</a>
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" role="navigation" aria-label="Principal">
+    <div class="sidebar-brand">
+      <img src="{{ url_for('static', filename='img/Logo.png') }}" alt="DK Electric Help" class="sidebar-logo">
+      <span class="sidebar-name">DK Electric</span>
     </div>
+
+    <nav class="sidebar-nav">
+      <a href="/orcamentos" class="sidebar-link {{ 'active' if request.path == '/orcamentos' }}">
+        <span class="sidebar-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </span>
+        Painel
+      </a>
+      <a href="/" class="sidebar-link {{ 'active' if request.path == '/' }}">
+        <span class="sidebar-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </span>
+        Novo Orcamento
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="sidebar-version">v2.0</span>
+      <span class="sidebar-copy">DK Electric Help</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-wrapper">
+    <main class="main-area">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="footer-bar">
+      <span>© 2026 DK Electric Help — Engenharia Eletrica de Precisao</span>
+    </footer>
   </div>
-  <div class="nav-mobile" id="nav-mobile">
-    <a href="/" class="nav-link">Orcamento</a>
-    <a href="/orcamentos" class="nav-link">Painel</a>
-  </div>
-</nav>
 
-<main class="container main-content" role="main">
-  {% block content %}{% endblock %}
-</main>
-
-<footer class="footer" role="contentinfo">
-  <span>© 2026 DK Electric Help — Engenharia Eletrica de Precisao</span>
-</footer>
-
+</div>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>
