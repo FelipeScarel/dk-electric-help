@@ -20,8 +20,13 @@ class Cliente(db.Model):
     nome = db.Column(db.String(200), nullable=False)
     empresa = db.Column(db.String(200))
     telefone = db.Column(db.String(30), nullable=False)
+    cep = db.Column(db.String(10))
     endereco = db.Column(db.String(300), nullable=False)
+    numero = db.Column(db.String(20))
+    complemento = db.Column(db.String(100))
+    bairro = db.Column(db.String(150))
     cidade = db.Column(db.String(150), nullable=False)
+    estado = db.Column(db.String(2))
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
 
     orcamentos = db.relationship("Orcamento", back_populates="cliente", lazy="dynamic")
@@ -32,8 +37,13 @@ class Cliente(db.Model):
             "nome": self.nome,
             "empresa": self.empresa,
             "telefone": self.telefone,
+            "cep": self.cep,
             "endereco": self.endereco,
+            "numero": self.numero,
+            "complemento": self.complemento,
+            "bairro": self.bairro,
             "cidade": self.cidade,
+            "estado": self.estado,
         }
 
 

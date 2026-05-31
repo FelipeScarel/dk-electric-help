@@ -2,10 +2,34 @@
 {% block title %}Painel - DK Electric Help{% endblock %}
 {% block content %}
 <div class="admin-page">
+  <!-- Stats Dashboard -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📋</div>
+      <div class="stat-value">{{ stats.total }}</div>
+      <div class="stat-label">Total de Orcamentos</div>
+    </div>
+    <div class="stat-card accent">
+      <div class="stat-icon">💰</div>
+      <div class="stat-value">{{ stats.valor_total }}</div>
+      <div class="stat-label">Valor Total Emitido</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-value">{{ stats.pendentes }}</div>
+      <div class="stat-label">Pendentes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">✅</div>
+      <div class="stat-value">{{ stats.agendados }}</div>
+      <div class="stat-label">Agendados</div>
+    </div>
+  </div>
+
   <div class="admin-header">
     <div>
-      <h1>Painel Administrativo</h1>
-      <p>{{ orcamentos|length }} orcamento(s) encontrado(s)</p>
+      <h1>Orcamentos Recentes</h1>
+      <p>{{ orcamentos|length }} resultado(s)</p>
     </div>
     <div class="admin-header-actions">
       <a href="/" class="btn-primary">+ Novo Orcamento</a>
@@ -73,20 +97,18 @@
           <span class="admin-value">{{ o.cliente.nome }}</span>
         </div>
         <div class="admin-field">
-          <span class="admin-label">Empresa</span>
-          <span class="admin-value">{{ o.cliente.empresa or '---' }}</span>
-        </div>
-        <div class="admin-field">
           <span class="admin-label">Telefone</span>
           <span class="admin-value">{{ o.cliente.telefone }}</span>
         </div>
         <div class="admin-field admin-field-full">
           <span class="admin-label">Endereco</span>
-          <span class="admin-value">{{ o.cliente.endereco }}</span>
+          <span class="admin-value">
+            {{ o.cliente.endereco }}{% if o.cliente.numero %}, {{ o.cliente.numero }}{% endif %}{% if o.cliente.complemento %} - {{ o.cliente.complemento }}{% endif %}{% if o.cliente.bairro %} - {{ o.cliente.bairro }}{% endif %}
+          </span>
         </div>
         <div class="admin-field">
           <span class="admin-label">Cidade</span>
-          <span class="admin-value">{{ o.cliente.cidade }}</span>
+          <span class="admin-value">{{ o.cliente.cidade }}{% if o.cliente.estado %} / {{ o.cliente.estado }}{% endif %}</span>
         </div>
         <div class="admin-field">
           <span class="admin-label">Validade</span>

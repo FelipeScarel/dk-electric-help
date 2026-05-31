@@ -101,15 +101,28 @@ def _draw_header(c, y):
 def _draw_client_section(c, y, orcamento):
     """Secao de dados do cliente em grid elegante."""
     cliente = orcamento.cliente
+
+    # Monta endereco completo
+    endereco_completo = cliente.endereco
+    if cliente.numero:
+        endereco_completo += f", {cliente.numero}"
+    if cliente.complemento:
+        endereco_completo += f" - {cliente.complemento}"
+    if cliente.bairro:
+        endereco_completo += f" - {cliente.bairro}"
+    cidade_completa = cliente.cidade
+    if cliente.estado:
+        cidade_completa += f" / {cliente.estado}"
+
     fields = [
         ("CLIENTE", cliente.nome),
         ("EMPRESA", cliente.empresa or "---"),
         ("TELEFONE", cliente.telefone),
-        ("ENDERECO", cliente.endereco),
-        ("CIDADE", cliente.cidade),
+        ("CEP", cliente.cep or "---"),
+        ("ENDERECO", endereco_completo),
+        ("CIDADE", cidade_completa),
     ]
 
-    # Box ao redor
     rows = (len(fields) + 1) // 2
     box_h = rows * 28 + 20
     box_y = y - box_h
@@ -134,9 +147,10 @@ def _draw_client_section(c, y, orcamento):
         c.drawString(x, cy, label)
         c.setFont(FONT_FAMILY, 10)
         c.setFillColor(BLACK)
-        c.drawString(x, cy - 14, value)
+        # Trunca valor longo
+        display_val = value if len(value) < 45 else value[:42] + "..."
+        c.drawString(x, cy - 14, display_val)
 
-        # Linha sutil
         if row < rows - 1 or col == 0:
             c.setStrokeColor(BORDER)
             c.setLineWidth(0.3)

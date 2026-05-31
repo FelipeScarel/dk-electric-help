@@ -75,7 +75,18 @@ def listar_orcamentos():
         .limit(50)
         .all()
     )
-    return render_template("orcamentos.html", orcamentos=orcamentos)
+    # Estatisticas
+    total = Orcamento.query.count()
+    valor_total = db.session.query(db.func.sum(Orcamento.valor_total)).scalar() or 0
+    pendentes = Orcamento.query.filter_by(status="PENDENTE").count()
+    agendados = Orcamento.query.filter_by(status="AGENDADO").count()
+    stats = {
+        "total": total,
+        "valor_total": f"R$ {valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        "pendentes": pendentes,
+        "agendados": agendados,
+    }
+    return render_template("orcamentos.html", orcamentos=orcamentos, stats=stats)
 
 
 # ---------------------------------------------------------------------------
@@ -98,8 +109,13 @@ def criar_orcamento():
         nome=data["nome"].strip(),
         empresa=data.get("empresa", "").strip(),
         telefone=data["telefone"].strip(),
+        cep=data.get("cep", "").strip(),
         endereco=data["endereco"].strip(),
+        numero=data.get("numero", "").strip(),
+        complemento=data.get("complemento", "").strip(),
+        bairro=data.get("bairro", "").strip(),
         cidade=data["cidade"].strip(),
+        estado=data.get("estado", "").strip().upper(),
     )
     db.session.add(cliente)
     db.session.flush()

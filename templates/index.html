@@ -11,31 +11,61 @@
     <!-- ===== DADOS DO CLIENTE ===== -->
     <fieldset class="form-section">
       <legend class="section-legend">Dados do Cliente</legend>
-      <div class="form-grid">
+      <div class="form-grid col2">
         <div class="form-group span-2">
-          <label for="nome">Nome / Cliente <span class="required">*</span></label>
-          <input type="text" id="nome" name="nome" required
-                 placeholder="Nome completo do cliente">
+          <label for="nome">Nome Completo <span class="required">*</span></label>
+          <input type="text" id="nome" name="nome" required placeholder="Nome completo do cliente">
         </div>
         <div class="form-group">
           <label for="empresa">Empresa</label>
-          <input type="text" id="empresa" name="empresa"
-                 placeholder="Nome da empresa (opcional)">
+          <input type="text" id="empresa" name="empresa" placeholder="Nome da empresa (opcional)">
         </div>
         <div class="form-group">
           <label for="telefone">Telefone <span class="required">*</span></label>
-          <input type="tel" id="telefone" name="telefone" required
-                 placeholder="(11) 99999-9999">
+          <input type="tel" id="telefone" name="telefone" required placeholder="(11) 99999-9999">
         </div>
+      </div>
+    </fieldset>
+
+    <!-- ===== ENDERECO ===== -->
+    <fieldset class="form-section">
+      <legend class="section-legend">Endereco do Servico</legend>
+      <div class="form-grid col2">
+        <div class="form-group">
+          <label for="cep">CEP</label>
+          <input type="text" id="cep" name="cep" placeholder="00000-000" maxlength="9">
+        </div>
+        <div class="form-group"></div>
         <div class="form-group span-2">
           <label for="endereco">Endereco <span class="required">*</span></label>
-          <input type="text" id="endereco" name="endereco" required
-                 placeholder="Rua, numero, bairro">
+          <input type="text" id="endereco" name="endereco" required placeholder="Rua, Avenida...">
+        </div>
+        <div class="form-group">
+          <label for="numero">Numero</label>
+          <input type="text" id="numero" name="numero" placeholder="123">
+        </div>
+        <div class="form-group">
+          <label for="complemento">Complemento</label>
+          <input type="text" id="complemento" name="complemento" placeholder="Apto, Bloco, Sala...">
+        </div>
+        <div class="form-group">
+          <label for="bairro">Bairro</label>
+          <input type="text" id="bairro" name="bairro" placeholder="Bairro">
         </div>
         <div class="form-group">
           <label for="cidade">Cidade <span class="required">*</span></label>
-          <input type="text" id="cidade" name="cidade" required
-                 placeholder="Cidade - UF">
+          <input type="text" id="cidade" name="cidade" required placeholder="Cidade">
+        </div>
+        <div class="form-group">
+          <label for="estado">Estado</label>
+          <select id="estado" name="estado">
+            <option value="">Selecione</option>
+            <option value="SP">SP</option><option value="RJ">RJ</option><option value="MG">MG</option>
+            <option value="PR">PR</option><option value="RS">RS</option><option value="SC">SC</option>
+            <option value="BA">BA</option><option value="PE">PE</option><option value="CE">CE</option>
+            <option value="DF">DF</option><option value="GO">GO</option><option value="MT">MT</option>
+            <option value="MS">MS</option><option value="ES">ES</option>
+          </select>
         </div>
         <div class="form-group">
           <label for="validade_dias">Validade da Proposta</label>

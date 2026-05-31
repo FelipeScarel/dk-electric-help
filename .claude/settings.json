@@ -75,7 +75,8 @@
       "PowerShell(Stop-Process -Force)",
       "PowerShell(powershell -ExecutionPolicy Bypass -File \"c:\\\\Users\\\\felip\\\\SISTEMA DK\\\\start.ps1\")",
       "PowerShell(docker pull atendai/evolution-api 2>&1)",
-      "PowerShell(Test-Path \"c:\\\\Users\\\\felip\\\\SISTEMA DK\\\\.wpp\\\\Default\"; Write-Host \"Sessao existe: $\\(Test-Path 'c:\\\\Users\\\\felip\\\\SISTEMA DK\\\\.wpp\\\\Default'\\)\")"
+      "PowerShell(Test-Path \"c:\\\\Users\\\\felip\\\\SISTEMA DK\\\\.wpp\\\\Default\"; Write-Host \"Sessao existe: $\\(Test-Path 'c:\\\\Users\\\\felip\\\\SISTEMA DK\\\\.wpp\\\\Default'\\)\")",
+      "Bash(curl -s http://127.0.0.1:5000/orcamentos)"
     ]
   }
 }
