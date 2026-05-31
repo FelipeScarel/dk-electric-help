@@ -3,3 +3,23 @@ Time: 15:30
 Phone Number: +5519996387901
 Message: *NOVO AGENDAMENTO CONFIRMADO**Cliente:* Teste Final*Data:* 02/06/2026*Hora:* 16:30 - 18:00*Endereco:*Av Paulista 1000*Cidade:* Sao Paulo*Telefone:* 11988887777*Empresa:* Oficina 2000*Servicos:* - Instalacao eletrica completa: R$ 2.500,00*Valor:* R$ 2.500,00*Obs:* Nenhuma*Orcamento:* 6C447A8A7F11_DK Electric Help_
 --------------------
+Date: 31/5/2026
+Time: 15:32
+Phone Number: +5519987203886
+Message: *NOVO AGENDAMENTO CONFIRMADO**Cliente:* FELIPE SCAREL*Data:* 03/06/2026*Hora:* 09:30 - 11:00*Endereco:*RUA ALCEU MAYNARD*Cidade:* Piracicaba*Telefone:* 19996387901*Empresa:* agasg*Servicos:* - cabo: R$ 780,00*Valor:* R$ 780,00*Obs:* tgeste*Orcamento:* A3D235EDD9E4_DK Electric Help_
+--------------------
+Date: 31/5/2026
+Time: 15:32
+Phone Number: +5519996387901
+Message: *NOVO AGENDAMENTO CONFIRMADO**Cliente:* FELIPE SCAREL*Data:* 03/06/2026*Hora:* 09:30 - 11:00*Endereco:*RUA ALCEU MAYNARD*Cidade:* Piracicaba*Telefone:* 19996387901*Empresa:* agasg*Servicos:* - cabo: R$ 780,00*Valor:* R$ 780,00*Obs:* tgeste*Orcamento:* A3D235EDD9E4_DK Electric Help_
+--------------------
+Date: 31/5/2026
+Time: 15:33
+Phone Number: +5519996387901
+Message: *NOVO AGENDAMENTO CONFIRMADO**Cliente:* Felipe*Data:* 03/06/2026*Hora:* 08:00 - 09:30*Endereco:*Rua Alceu Maynardi Araújo, 133*Cidade:* Piracicaba*Telefone:* 19996387901*Empresa:* Felps*Servicos:* - Cabos: R$ 1.105,00*Valor:* R$ 1.105,00*Obs:* Nenhuma*Orcamento:* D8D54FCF4182_DK Electric Help_
+--------------------
+Date: 31/5/2026
+Time: 15:33
+Phone Number: +5519987203886
+Message: *NOVO AGENDAMENTO CONFIRMADO**Cliente:* Felipe*Data:* 03/06/2026*Hora:* 08:00 - 09:30*Endereco:*Rua Alceu Maynardi Araújo, 133*Cidade:* Piracicaba*Telefone:* 19996387901*Empresa:* Felps*Servicos:* - Cabos: R$ 1.105,00*Valor:* R$ 1.105,00*Obs:* Nenhuma*Orcamento:* D8D54FCF4182_DK Electric Help_
+--------------------

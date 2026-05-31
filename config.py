@@ -26,11 +26,9 @@ class Config:
     COMPANY_EMAIL = os.environ.get("COMPANY_EMAIL") or "contato@dkelectric.com.br"
     PROPOSAL_VALIDITY_DAYS = int(os.environ.get("PROPOSAL_VALIDITY_DAYS", "15"))
 
-    # WhatsApp via Evolution API
-    EVOLUTION_API_URL = os.environ.get("EVOLUTION_API_URL") or "http://localhost:8080"
-    EVOLUTION_API_KEY = os.environ.get("EVOLUTION_API_KEY") or ""
-    EVOLUTION_INSTANCE = os.environ.get("EVOLUTION_INSTANCE") or "dk-electric"
+    # WhatsApp via Meta Cloud API (funciona, testado)
+    META_WHATSAPP_TOKEN = os.environ.get("META_WHATSAPP_TOKEN") or "EAATJO13J2TgBRp9buxJJW736yqgHplyihPxZBp6y1dgVK2K6UZChzkvGDwiZAOnAp5qRGWoGqCYkZBAHDdjae33lrl93303zWvY3mYk6l6VVhGtb4LP5vnSKYD5ZA3EC3xczmFDGBf7mvEZAiGkpL6QYLVNDnZCZCAJfDbgLZAYM1YIRvmBpBOSRBGhXLiIfHZBM30nmRZB3I7WsFVb4yJhNdKf2y8rLqOkCgtiYdM5Wi1CpoxGzkGBdkFMO7aK3qecUGKg5cpGOqXOkWnM1mCsAU8x"
+    META_WHATSAPP_PHONE_ID = os.environ.get("META_WHATSAPP_PHONE_ID") or "1125485747321060"
 
-    # Numeros dos socios que recebem notificacoes
-    WHATSAPP_SOCIO_1 = os.environ.get("WHATSAPP_SOCIO_1") or "5519996387901"
-    WHATSAPP_SOCIO_2 = os.environ.get("WHATSAPP_SOCIO_2") or "5519987203886"
+    # Numero que recebe notificacao de novos agendamentos
+    WHATSAPP_NOTIFY = os.environ.get("WHATSAPP_NOTIFY") or "5519987203886"

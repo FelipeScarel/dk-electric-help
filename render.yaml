@@ -22,13 +22,9 @@ services:
         sync: false
       - key: BASE_URL
         sync: false
-      - key: WHATSAPP_SOCIO_1
-        value: "5519996387901"
-      - key: WHATSAPP_SOCIO_2
+      - key: WHATSAPP_NOTIFY
         value: "5519987203886"
-      - key: EVOLUTION_API_URL
+      - key: META_WHATSAPP_TOKEN
         sync: false
-      - key: EVOLUTION_API_KEY
+      - key: META_WHATSAPP_PHONE_ID
         sync: false
-      - key: EVOLUTION_INSTANCE
-        value: "dk-electric"
