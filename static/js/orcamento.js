@@ -82,8 +82,8 @@
     row.innerHTML =
       '<td><input type="text" class="inp-item" placeholder="1" maxlength="10" aria-label="Numero do item"></td>' +
       '<td><input type="text" class="inp-desc" placeholder="Descricao do servico ou material" aria-label="Descricao"></td>' +
-      '<td><input type="number" class="inp-qtd" value="1" min="1" step="1" aria-label="Quantidade"></td>' +
-      '<td><input type="number" class="inp-vu" value="0.00" min="0" step="0.01" aria-label="Valor unitario"></td>' +
+      '<td><input type="number" class="inp-qtd" value="1" min="1" step="1" inputmode="numeric" aria-label="Quantidade"></td>' +
+      '<td><input type="number" class="inp-vu" value="0.00" min="0" step="0.01" inputmode="decimal" aria-label="Valor unitario"></td>' +
       '<td><span class="item-total-readonly">' + formatBRL(0) + '</span></td>' +
       '<td><button type="button" class="btn-remove-row" title="Remover item" aria-label="Remover item">&times;</button></td>';
     tbody.appendChild(row);

@@ -255,7 +255,7 @@ p{color:var(--gray-500);line-height:1.6}
 /* Select */
 .field-select{
   cursor:pointer;
-  -webkit-appearance:none;appearance:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23777' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 4px center;
   padding-right:24px;
@@ -609,31 +609,159 @@ p{color:var(--gray-500);line-height:1.6}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /*===============================================================
- RESPONSIVE
+ MOBILE TOP BAR + HAMBURGER
 ===============================================================*/
-@media(max-width:539px){
+.mobile-bar{display:none}
+.hamburger{
+  display:flex;flex-direction:column;gap:5px;background:none;border:none;
+  cursor:pointer;padding:8px;border-radius:4px;transition:all .15s ease;
+}
+.hamburger span{display:block;width:22px;height:2px;background:var(--white);border-radius:2px;transition:all .2s ease}
+.hamburger:hover{background:rgba(255,255,255,.08)}
+.hamburger:active{transform:scale(.92)}
+
+.sidebar-overlay{display:none}
+.mobile-bar-title{color:var(--white);font-size:.78rem;font-weight:700;letter-spacing:.04em}
+.mobile-bar-spacer{width:40px}
+
+/*===============================================================
+ RESPONSIVE — Mobile < 768px
+===============================================================*/
+@media(max-width:767px){
+  /* Mobile top bar */
+  .mobile-bar{
+    display:flex;align-items:center;justify-content:space-between;
+    position:fixed;top:0;left:0;right:0;z-index:1100;
+    height:56px;padding:0 16px;
+    background:rgba(8,8,8,.95);
+    backdrop-filter:saturate(180%) blur(20px);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  .mobile-bar::after{
+    content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--red),transparent);opacity:.6;
+  }
+
+  /* Sidebar overlay on mobile */
+  .sidebar-overlay{
+    display:none;position:fixed;inset:0;z-index:1050;
+    background:rgba(0,0,0,.5);backdrop-filter:blur(4px);
+  }
+  .sidebar.open + .main-wrapper + .sidebar-overlay,
+  .app-shell:has(.sidebar.open) .sidebar-overlay{display:block}
+
+  /* Sidebar as slide-out drawer */
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;z-index:1090;
+    width:260px;transform:translateX(-100%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+    box-shadow:4px 0 24px rgba(0,0,0,.3);
+  }
+  .sidebar.open{transform:translateX(0)}
+
+  /* Main takes full width */
+  .main-wrapper{margin-left:0;padding-top:56px}
+  .main-area{padding:20px 16px 16px}
+
+  /* Single column forms */
   .form-grid.cols-2{grid-template-columns:1fr}
   .span-2{grid-column:span 1}
+  .form-section{padding:24px 16px}
+
+  /* Cards single column */
   .admin-card-body{grid-template-columns:1fr}
   .admin-field.wide{grid-column:span 1}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .admin-header{flex-direction:column;align-items:flex-start}
+
+  /* Typography scaling */
+  .form-header h1{font-size:1.5rem}
+  .summary-value{font-size:1.5rem}
+
+  /* Sidebar overlay fix: position overlay correctly */
+  .app-shell{position:relative}
 }
-@media(max-width:767px){
-  .sidebar{width:60px}
-  .sidebar-brand{padding:20px 8px}
-  .sidebar-name{display:none}
-  .sidebar-logo{height:30px}
-  .sidebar-link{justify-content:center;padding:12px 8px;font-size:0}
-  .sidebar-link .sidebar-icon{margin:0}
-  .sidebar-nav{padding:12px 6px}
-  .sidebar-footer{display:none}
-  .main-wrapper{margin-left:60px}
-  .main-area{padding:24px 16px 16px}
+
+/* iOS zoom prevention: 16px minimum on mobile inputs */
+@media(max-width:1023px){
+  .field-input,.field-select,.field-textarea,
+  .items-table input,.admin-search input{font-size:16px!important}
+  .field-label{font-size:.6rem}
 }
+
+/*===============================================================
+ RESPONSIVE — Tablet 768-1023px
+===============================================================*/
 @media(min-width:768px)and(max-width:1023px){
-  .main-area{padding:32px 24px 20px}
+  .sidebar{width:200px}
+  .main-wrapper{margin-left:200px}
+  .main-area{padding:28px 24px 20px}
+  .sidebar-logo{height:36px}
+  .sidebar-link{font-size:.72rem;padding:9px 12px}
+  .sidebar-brand{padding:22px 14px 16px}
 }
+
+/*===============================================================
+ RESPONSIVE — Desktop 1024px+
+===============================================================*/
 @media(min-width:1024px){
   html{font-size:16px}
+  .main-area{padding:36px 40px 20px}
+}
+
+/*===============================================================
+ QUANTITY INPUT FIX — wider, numbers fully visible
+===============================================================*/
+.col-q{width:10%!important}
+.col-vu{width:17%!important}
+.col-vt{width:17%!important}
+.col-act{width:6%!important}
+.items-table input[type="number"]{
+  min-width:60px;width:100%;text-align:center;
+  padding:8px 6px;font-size:.82rem;
+  -moz-appearance:textfield;
+}
+.items-table input[type="number"]::-webkit-inner-spin-button,
+.items-table input[type="number"]::-webkit-outer-spin-button{opacity:1;height:28px}
+
+/*===============================================================
+ ADMIN CARD SPACING — increased gaps, no text truncation
+===============================================================*/
+.admin-cards{gap:20px}
+.admin-card-body{gap:8px 18px}
+.admin-card-body .admin-value{overflow-wrap:break-word;word-break:break-word;white-space:normal;line-height:1.4}
+.admin-card-body .admin-field{min-width:0;overflow:hidden}
+.admin-card-top{padding:16px 18px;gap:14px}
+.admin-card-footer{padding:16px 18px;gap:14px}
+.admin-protocol{font-size:.88rem;overflow-wrap:break-word;word-break:break-all}
+.admin-date-row strong{white-space:normal;word-break:break-word}
+.admin-card-value{white-space:normal;word-break:break-word}
+
+/*===============================================================
+ BUTTON ACTIVE STATES — tactile feedback on mobile
+===============================================================*/
+.btn:active,.btn-generate:active,.btn-schedule-confirm:active,
+.btn-add-row:active,.btn-remove-row:active,.slot-btn:active,
+.sidebar-link:active,.btn-icon:active,.nav-link:active{
+  opacity:.8;transform:scale(.96);transition:all .05s ease;
+}
+.slot-btn:active{background:var(--red-wash);border-color:var(--red)}
+
+/*===============================================================
+ SMOOTH SCROLLING + TOUCH
+===============================================================*/
+html{scroll-behavior:smooth}
+.main-wrapper{-webkit-overflow-scrolling:touch}
+.slots-list{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.table-shell{-webkit-overflow-scrolling:touch}
+
+/*===============================================================
+ MOBILE INPUT TYPE FIXES — numeric keyboards
+===============================================================*/
+input[inputmode="numeric"],input[inputmode="decimal"],
+input[type="number"],input[type="tel"]{
+  -webkit-user-select:text;user-select:text;
 }
 
 /*===============================================================

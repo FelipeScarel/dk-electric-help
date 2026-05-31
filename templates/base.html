@@ -14,21 +14,33 @@
 <body>
 <div class="app-shell">
 
+  <!-- MOBILE TOP BAR (visible only on small screens) -->
+  <header class="mobile-bar" aria-label="Barra mobile">
+    <button class="hamburger" id="hamburger-btn" aria-label="Abrir menu" aria-expanded="false" onclick="document.getElementById('sidebar').classList.toggle('open');this.setAttribute('aria-expanded',document.getElementById('sidebar').classList.contains('open'))">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="mobile-bar-title">DK Electric Help</span>
+    <span class="mobile-bar-spacer"></span>
+  </header>
+
+  <!-- OVERLAY (mobile menu backdrop) -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="document.getElementById('sidebar').classList.remove('open');document.getElementById('hamburger-btn').setAttribute('aria-expanded','false')"></div>
+
   <!-- SIDEBAR -->
-  <aside class="sidebar" role="navigation" aria-label="Principal">
+  <aside class="sidebar" id="sidebar" role="navigation" aria-label="Principal">
     <div class="sidebar-brand">
       <img src="{{ url_for('static', filename='img/Logo.png') }}" alt="DK Electric Help" class="sidebar-logo">
       <span class="sidebar-name">DK Electric</span>
     </div>
 
     <nav class="sidebar-nav">
-      <a href="/orcamentos" class="sidebar-link {{ 'active' if request.path == '/orcamentos' }}">
+      <a href="/orcamentos" class="sidebar-link {{ 'active' if request.path == '/orcamentos' }}" onclick="document.getElementById('sidebar').classList.remove('open')">
         <span class="sidebar-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         </span>
         Painel
       </a>
-      <a href="/" class="sidebar-link {{ 'active' if request.path == '/' }}">
+      <a href="/" class="sidebar-link {{ 'active' if request.path == '/' }}" onclick="document.getElementById('sidebar').classList.remove('open')">
         <span class="sidebar-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </span>
