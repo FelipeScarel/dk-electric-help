@@ -1,94 +1,123 @@
 """
-Servico profissional de notificacao WhatsApp para DK Electric Help.
-Dispara mensagens automaticas para os socios quando um cliente agenda.
+DK Electric Help - WhatsApp Notification Service
+Utiliza Evolution API com instancia propria conectada via QR Code.
 
-Usa a Meta WhatsApp Cloud API (gratuita para ate 1000 msgs/mes).
-Os destinatarios NAO precisam adicionar contatos nem fazer nada -
-recebem as mensagens diretamente no WhatsApp como se fossem normais.
+Dependencias:
+- Evolution API rodando (Docker ou servidor proprio)
+- Instancia conectada via QR Code no WhatsApp
 
-Para ativar: configure as env vars META_WHATSAPP_TOKEN e META_WHATSAPP_PHONE_ID
-no dashboard do Render ou no .env local.
+Configuracao (env vars ou config.py):
+- EVOLUTION_API_URL: URL base da Evolution API (ex: http://localhost:8080)
+- EVOLUTION_API_KEY: API Key da instancia
+- EVOLUTION_INSTANCE: Nome da instancia (default: dk-electric)
+- WHATSAPP_SOCIO_1 / WHATSAPP_SOCIO_2: Numeros dos socios
 """
 
 import json
 import os
+import time
 import urllib.error
 import urllib.request
+from datetime import datetime
 
 from config import Config
+from database import NotificationLog, db
 
 
-def _send_whatsapp(phone: str, message: str) -> bool:
-    """Envia mensagem via Meta WhatsApp Cloud API (oficial, profissional)."""
-    token = (os.environ.get("META_WHATSAPP_TOKEN") or "").strip()
-    phone_id = (os.environ.get("META_WHATSAPP_PHONE_ID") or "").strip()
+def _send_text(phone: str, text: str) -> dict:
+    """
+    Envia mensagem de texto via Evolution API.
+    Retorna dict com status e resposta.
+    """
+    api_url = (os.environ.get("EVOLUTION_API_URL") or Config.EVOLUTION_API_URL).strip().rstrip("/")
+    api_key = (os.environ.get("EVOLUTION_API_KEY") or Config.EVOLUTION_API_KEY).strip()
+    instance = (os.environ.get("EVOLUTION_INSTANCE") or Config.EVOLUTION_INSTANCE).strip()
 
-    if not token or not phone_id:
-        return False
+    if not api_url or not api_key:
+        return {"success": False, "error": "Evolution API nao configurada.", "http_status": None}
 
-    url = f"https://graph.facebook.com/v21.0/{phone_id}/messages"
-    body = json.dumps({
-        "messaging_product": "whatsapp",
-        "recipient_type": "individual",
-        "to": phone,
-        "type": "text",
-        "text": {"preview_url": False, "body": message},
-    }).encode("utf-8")
-
+    url = f"{api_url}/message/sendText/{instance}"
+    body = json.dumps({"number": phone, "text": text}).encode("utf-8")
     headers = {
-        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
-        "User-Agent": "DK-Electric-Help/1.0",
+        "apikey": api_key,
+        "User-Agent": "DK-Electric-Help/2.0",
     }
 
     try:
         req = urllib.request.Request(url, data=body, headers=headers, method="POST")
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            result = json.loads(resp.read().decode())
-            if resp.status == 200 or resp.status == 201:
-                print(f"[WHATSAPP] Enviado para {phone} - msg ID: {result.get('messages', [{}])[0].get('id', 'ok')}")
-                return True
-            print(f"[WHATSAPP] Erro Meta API ({resp.status}): {result}")
-            return False
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            resp_body = resp.read().decode()
+            return {
+                "success": resp.status in (200, 201),
+                "http_status": resp.status,
+                "response": resp_body[:500],
+            }
     except urllib.error.HTTPError as e:
-        body = e.read().decode() if e.fp else ""
-        print(f"[WHATSAPP] HTTP {e.code} para {phone}: {body[:300]}")
-        return False
+        err_body = e.read().decode() if e.fp else ""
+        return {"success": False, "http_status": e.code, "response": err_body[:500], "error": str(e)}
     except Exception as e:
-        print(f"[WHATSAPP] Erro para {phone}: {e}")
-        return False
+        return {"success": False, "http_status": None, "response": str(e), "error": str(e)}
+
+
+def _build_message(orcamento, agendamento) -> str:
+    """Monta a mensagem formatada do agendamento."""
+    cliente = orcamento.cliente
+    valor = f"R$ {orcamento.valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+    obs = orcamento.observacoes.strip() if orcamento.observacoes else "Nenhuma"
+
+    # Lista de servicos
+    servicos = "\n".join(
+        f"  - {i.descricao[:50]}: R$ {i.valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        for i in orcamento.itens
+    )
+
+    return (
+        f"\U0001F4C5 *NOVO AGENDAMENTO CONFIRMADO*\n\n"
+        f"\U0001F464 *Cliente:* {cliente.nome}\n"
+        f"\U0001F4C6 *Data:* {agendamento.data_agendada.strftime('%d/%m/%Y')}\n"
+        f"⏰ *Hora:* {agendamento.periodo}\n\n"
+        f"\U0001F4CD *Endereco:*\n{cliente.endereco}\n"
+        f"*Cidade:* {cliente.cidade}\n"
+        f"*Telefone:* {cliente.telefone}\n"
+        f"{'*Empresa:* ' + cliente.empresa if cliente.empresa else ''}\n\n"
+        f"\U0001F527 *Servicos:*\n{servicos}\n\n"
+        f"\U0001F4B0 *Valor do orcamento:*\n{valor}\n\n"
+        f"\U0001F4DD *Observacoes:*\n{obs}\n\n"
+        f"*Orcamento:* {orcamento.hash_id}\n"
+        f"*DK Electric Help*"
+    )
+
+
+def _log_notification(agendamento_id, phone, status, message, response, attempts):
+    """Registra tentativa de notificacao no banco."""
+    try:
+        log = NotificationLog(
+            agendamento_id=agendamento_id,
+            phone_to=phone,
+            status=status,
+            message_body=message[:500] if message else "",
+            response=response[:500] if response else "",
+            attempts=attempts,
+        )
+        db.session.add(log)
+        db.session.commit()
+    except Exception as e:
+        print(f"[WHATSAPP] Erro ao salvar log: {e}", flush=True)
+        db.session.rollback()
 
 
 def notify_scheduling(orcamento, agendamento) -> dict:
     """
-    Notifica os socios via WhatsApp sobre um novo agendamento.
-    Se META_WHATSAPP_TOKEN nao estiver configurado, apenas loga a mensagem.
+    Envia notificacao WhatsApp para os socios sobre novo agendamento.
+    Fluxo: montar mensagem -> enviar para socio 1 -> enviar para socio 2 -> registrar logs.
+    Suporta retentativa automatica em caso de falha.
     """
-    cliente = orcamento.cliente
+    MAX_RETRIES = 2
+    RETRY_DELAY = 3  # segundos
 
-    # Formata itens
-    linhas_itens = []
-    for i in orcamento.itens:
-        valor = f"R$ {i.valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        linhas_itens.append(f"  - {i.descricao[:50]}  |  {valor}")
-    itens_txt = "\n".join(linhas_itens) if linhas_itens else "Nenhum item"
-
-    valor_total = f"R$ {orcamento.valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-    mensagem = (
-        f"*NOVO AGENDAMENTO - DK ELECTRIC HELP*\n"
-        f"{'='*35}\n\n"
-        f"*Cliente:* {cliente.nome}\n"
-        f"*Empresa:* {cliente.empresa or '---'}\n"
-        f"*Telefone:* {cliente.telefone}\n"
-        f"*Endereco:* {cliente.endereco}\n"
-        f"*Cidade:* {cliente.cidade}\n\n"
-        f"*Data:* {agendamento.data_agendada.strftime('%d/%m/%Y')}\n"
-        f"*Horario:* {agendamento.periodo}\n\n"
-        f"*SERVICOS:*\n{itens_txt}\n\n"
-        f"*VALOR TOTAL: {valor_total}*\n"
-        f"*Orcamento: {orcamento.hash_id}*"
-    )
+    mensagem = _build_message(orcamento, agendamento)
 
     phones = [
         (os.environ.get("WHATSAPP_SOCIO_1") or Config.WHATSAPP_SOCIO_1).strip(),
@@ -97,16 +126,43 @@ def notify_scheduling(orcamento, agendamento) -> dict:
     phones = [p for p in phones if p]
 
     if not phones:
-        print("[WHATSAPP] Nenhum telefone configurado.")
-        return {"status": "skipped"}
+        print("[WHATSAPP] Nenhum telefone configurado.", flush=True)
+        return {"status": "skipped", "reason": "no phones"}
 
     results = {}
     for phone in phones:
-        ok = _send_whatsapp(phone, mensagem)
-        results[phone] = "sent" if ok else "failed"
-        if not ok:
-            # Loga a mensagem que seria enviada
-            print(f"[WHATSAPP] FALHA ao enviar para {phone}. Configure META_WHATSAPP_TOKEN.")
-            print(f"[WHATSAPP] Mensagem nao enviada:\n{mensagem}")
+        success = False
+        last_response = ""
+        attempts = 0
 
-    return {"status": "completed", "results": results}
+        for attempt in range(1, MAX_RETRIES + 1):
+            attempts = attempt
+            print(f"[WHATSAPP] Enviando para {phone} (tentativa {attempt}/{MAX_RETRIES})...", flush=True)
+            result = _send_text(phone, mensagem)
+
+            if result["success"]:
+                success = True
+                last_response = result.get("response", "OK")
+                print(f"[WHATSAPP] OK - {phone}", flush=True)
+                break
+            else:
+                last_response = result.get("response", result.get("error", "unknown"))
+                print(f"[WHATSAPP] FALHA {phone}: {last_response[:150]}", flush=True)
+                if attempt < MAX_RETRIES:
+                    time.sleep(RETRY_DELAY)
+
+        status = "sent" if success else "failed"
+        results[phone] = status
+
+        # Registrar no banco
+        _log_notification(
+            agendamento_id=agendamento.id,
+            phone=phone,
+            status=status,
+            message=mensagem,
+            response=last_response,
+            attempts=attempts,
+        )
+
+    all_sent = all(v == "sent" for v in results.values())
+    return {"status": "completed" if all_sent else "partial", "results": results}

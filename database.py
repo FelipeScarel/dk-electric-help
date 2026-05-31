@@ -137,6 +137,21 @@ class SlotHorario(db.Model):
     )
 
 
+class NotificationLog(db.Model):
+    """Registro de envio de notificacoes WhatsApp."""
+    __tablename__ = "notification_logs"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    agendamento_id = db.Column(db.Integer, db.ForeignKey("agendamentos.id"), nullable=True)
+    phone_to = db.Column(db.String(20), nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="pending")  # pending, sent, failed
+    message_body = db.Column(db.Text)
+    response = db.Column(db.Text)
+    attempts = db.Column(db.Integer, default=1)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 def init_db(app):
     db.init_app(app)
     with app.app_context():

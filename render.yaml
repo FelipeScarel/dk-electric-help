@@ -26,7 +26,9 @@ services:
         value: "5519996387901"
       - key: WHATSAPP_SOCIO_2
         value: "5519987203886"
-      - key: META_WHATSAPP_TOKEN
+      - key: EVOLUTION_API_URL
         sync: false
-      - key: META_WHATSAPP_PHONE_ID
+      - key: EVOLUTION_API_KEY
         sync: false
+      - key: EVOLUTION_INSTANCE
+        value: "dk-electric"

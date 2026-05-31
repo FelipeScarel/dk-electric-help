@@ -10,6 +10,7 @@ from database import (
     Agendamento,
     Cliente,
     ItemOrcamento,
+    NotificationLog,
     Orcamento,
     SlotHorario,
     db,
