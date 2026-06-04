@@ -18,14 +18,14 @@
   </div>
 
   <div class="admin-header">
-    <div><h1>Orcamentos</h1><p>{{ orcamentos|length }} resultado(s)</p></div>
+    <div><h1>Orçamentos</h1><p>{{ orcamentos|length }} resultado(s)</p></div>
     <a href="/" class="btn btn-danger">+ Novo</a>
   </div>
 
   <div class="admin-toolbar">
     <div class="admin-search"><input type="text" id="admin-search" placeholder="Buscar por cliente, protocolo, cidade..." autocomplete="off" aria-label="Buscar"></div>
     <div class="admin-filters">
-      <select id="filter-status" aria-label="Status"><option value="">Todos</option><option value="PENDENTE">Pendente</option><option value="APROVADO_PELO_CLIENTE">Aprovado</option><option value="AGENDADO">Agendado</option><option value="CONCLUIDO">Concluido</option><option value="CANCELADO">Cancelado</option></select>
+      <select id="filter-status" aria-label="Status"><option value="">Todos</option><option value="PENDENTE">Pendente</option><option value="APROVADO_PELO_CLIENTE">Aprovado</option><option value="AGENDADO">Agendado</option><option value="CONCLUIDO">Concluído</option><option value="CANCELADO">Cancelado</option></select>
       <select id="filter-periodo" aria-label="Periodo"><option value="">Periodo</option><option value="7">7 dias</option><option value="30">30 dias</option><option value="60">60 dias</option><option value="90">90 dias</option></select>
       <span class="filter-count" id="filter-count"></span>
     </div>
@@ -39,7 +39,7 @@
         <div><div class="admin-protocol">{{ o.hash_id }}</div><div class="admin-date">{{ o.criado_em.strftime('%d/%m/%Y %H:%M') }}</div></div>
         <div class="admin-card-actions">
           <a href="{{ url_for('download_pdf', hash_id=o.hash_id) }}" class="btn-icon" title="PDF" aria-label="Baixar PDF">📄</a>
-          <button class="btn-icon btn-revisao" data-hash="{{ o.hash_id }}" title="Revisao" aria-label="Criar revisao">📋</button>
+          <button class="btn-icon btn-revisao" data-hash="{{ o.hash_id }}" title="Revisão" aria-label="Criar revisão">📋</button>
           <select class="status-pill" data-hash="{{ o.hash_id }}" onchange="mudarStatus(this)" aria-label="Status">
             <option value="PENDENTE" {% if o.status=='PENDENTE' %}selected{% endif %}>Pendente</option>
             <option value="APROVADO_PELO_CLIENTE" {% if o.status=='APROVADO_PELO_CLIENTE' %}selected{% endif %}>Aprovado</option>
@@ -68,14 +68,14 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-state"><div class="empty-state-icon">📭</div><p>Nenhum orcamento gerado ainda.</p><a href="/" class="btn btn-danger btn-lg">Criar Primeiro</a></div>
+  <div class="empty-state"><div class="empty-state-icon">📭</div><p>Nenhum orçamento gerado ainda.</p><a href="/" class="btn btn-danger btn-lg">Criar Primeiro</a></div>
   {% endif %}
 </div>
 
 <div class="modal-overlay" id="modal-confirm" style="display:none">
   <div class="modal-card">
-    <div class="modal-icon">!</div><h2>Confirmar Exclusao</h2>
-    <p style="color:var(--ink-500);margin:8px 0 20px">Protocolo <strong id="confirm-hash" style="font-family:var(--font-mono)"></strong> sera removido.</p>
+    <div class="modal-icon">!</div><h2>Confirmar Exclusão</h2>
+    <p style="color:var(--ink-500);margin:8px 0 20px">Protocolo <strong id="confirm-hash" style="font-family:var(--font-mono)"></strong> será removido permanentemente.</p>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-danger" id="btn-confirmar-exclusao" onclick="confirmarExclusao()">Sim, Excluir</button>

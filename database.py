@@ -61,6 +61,8 @@ class Orcamento(db.Model):
     data_emissao = db.Column(db.DateTime, default=datetime.utcnow)
     data_validade = db.Column(db.DateTime, nullable=False)
     valor_total = db.Column(db.Float, default=0.0)
+    total_materiais = db.Column(db.Float, default=0.0)
+    total_mao_obra = db.Column(db.Float, default=0.0)
     status = db.Column(db.String(30), default="PENDENTE")
     observacoes = db.Column(db.Text)
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
@@ -71,7 +73,9 @@ class Orcamento(db.Model):
     agendamento = db.relationship("Agendamento", back_populates="orcamento", uselist=False, cascade="all, delete-orphan")
 
     def recalcular_total(self):
-        self.valor_total = sum(item.valor_total for item in self.itens)
+        self.total_materiais = sum(item.valor_total_material for item in self.itens)
+        self.total_mao_obra = sum(item.valor_total_mao_obra for item in self.itens)
+        self.valor_total = self.total_materiais + self.total_mao_obra
 
     def to_dict(self):
         return {
@@ -81,6 +85,8 @@ class Orcamento(db.Model):
             "data_emissao": self.data_emissao.isoformat(),
             "data_validade": self.data_validade.isoformat(),
             "valor_total": self.valor_total,
+            "total_materiais": self.total_materiais,
+            "total_mao_obra": self.total_mao_obra,
             "status": self.status,
             "itens": [item.to_dict() for item in self.itens],
         }
@@ -94,8 +100,12 @@ class ItemOrcamento(db.Model):
     item = db.Column(db.String(50), nullable=False)
     descricao = db.Column(db.String(500), nullable=False)
     quantidade = db.Column(db.Integer, nullable=False, default=1)
-    valor_unitario = db.Column(db.Float, nullable=False)
-    valor_total = db.Column(db.Float, nullable=False)
+    valor_material = db.Column(db.Float, nullable=False, default=0.0)
+    valor_mao_obra = db.Column(db.Float, nullable=False, default=0.0)
+    valor_unitario = db.Column(db.Float, nullable=False, default=0.0)  # legacy — mantido para compatibilidade
+    valor_total = db.Column(db.Float, nullable=False, default=0.0)
+    valor_total_material = db.Column(db.Float, nullable=False, default=0.0)
+    valor_total_mao_obra = db.Column(db.Float, nullable=False, default=0.0)
 
     orcamento = db.relationship("Orcamento", back_populates="itens")
 
@@ -105,8 +115,12 @@ class ItemOrcamento(db.Model):
             "item": self.item,
             "descricao": self.descricao,
             "quantidade": self.quantidade,
+            "valor_material": self.valor_material,
+            "valor_mao_obra": self.valor_mao_obra,
             "valor_unitario": self.valor_unitario,
             "valor_total": self.valor_total,
+            "valor_total_material": self.valor_total_material,
+            "valor_total_mao_obra": self.valor_total_mao_obra,
         }
 
 

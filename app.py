@@ -132,14 +132,20 @@ def criar_orcamento():
 
     for item_data in data["itens"]:
         qtd = max(1, int(item_data.get("quantidade", 1)))
-        vu = max(0.0, float(item_data.get("valor_unitario", 0)))
+        vm = max(0.0, float(item_data.get("valor_material", 0)))
+        vo = max(0.0, float(item_data.get("valor_mao_obra", 0)))
+        vu = vm + vo
         item = ItemOrcamento(
             orcamento_id=orcamento.id,
             item=item_data.get("item", "").strip(),
             descricao=item_data.get("descricao", "").strip(),
             quantidade=qtd,
+            valor_material=vm,
+            valor_mao_obra=vo,
             valor_unitario=vu,
             valor_total=qtd * vu,
+            valor_total_material=qtd * vm,
+            valor_total_mao_obra=qtd * vo,
         )
         db.session.add(item)
 
@@ -371,8 +377,12 @@ def criar_revisao(hash_id):
             item=item_orig.item,
             descricao=item_orig.descricao,
             quantidade=item_orig.quantidade,
+            valor_material=item_orig.valor_material,
+            valor_mao_obra=item_orig.valor_mao_obra,
             valor_unitario=item_orig.valor_unitario,
             valor_total=item_orig.valor_total,
+            valor_total_material=item_orig.valor_total_material,
+            valor_total_mao_obra=item_orig.valor_total_mao_obra,
         )
         db.session.add(novo_item)
 

@@ -24,8 +24,13 @@ def notify_scheduling(orcamento, agendamento) -> str:
     if cliente.cep:
         cidade += f" - CEP: {cliente.cep}"
 
+    # Breakdown financeiro
+    total_materiais = f"R$ {orcamento.total_materiais:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    total_mao_obra = f"R$ {orcamento.total_mao_obra:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    valor_total = f"R$ {orcamento.valor_total:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
     mensagem = (
-        f"\U0001F4C5 *NOVO AGENDAMENTO*\n\n"
+        f"\U0001F4C5 *NOVO AGENDAMENTO — DK ELECTRIC HELP*\n\n"
         f"\U0001F464 *Cliente:* {cliente.nome}\n"
         + (f"\U0001F3E2 *Empresa:* {cliente.empresa}\n" if cliente.empresa else "") +
         f"\U0001F4DE *Telefone:* {cliente.telefone}\n\n"
@@ -33,8 +38,11 @@ def notify_scheduling(orcamento, agendamento) -> str:
         f"\U0001F550 *Horario:* {agendamento.periodo}\n\n"
         f"\U0001F4CD *Endereco:*\n{endereco}\n"
         f"*Cidade:* {cidade}\n\n"
-        f"\U0001F3F7 *Protocolo:* {orcamento.hash_id}\n\n"
-        f"_DK Electric Help_"
+        f"\U0001F3F7 *Protocolo:* {orcamento.hash_id}\n"
+        f"\U0001F4B0 *Total Materiais:* {total_materiais}\n"
+        f"\U0001F527 *Total Mao de Obra:* {total_mao_obra}\n"
+        f"\U0001F4B2 *Valor Total:* {valor_total}\n\n"
+        f"_DK Electric Help | Tel: (19) 99624-5413_"
     )
 
     return urllib.parse.quote(mensagem, safe="")

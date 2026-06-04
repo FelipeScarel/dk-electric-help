@@ -3,14 +3,14 @@
 {% block content %}
 <div class="schedule-page">
   <div class="schedule-header">
-    <h1>Agendar Servico</h1>
+    <h1>Agendar Serviço</h1>
     <div class="schedule-badge">{{ orcamento.hash_id }}</div>
-    <p>Selecione a data e horario para execucao do servico.</p>
+    <p>Selecione a data e horário para execução do serviço.</p>
   </div>
 
   <div class="schedule-grid">
     <div class="schedule-panel">
-      <h3>Horarios Disponiveis</h3>
+      <h3>Horários Disponíveis</h3>
       <div class="slots-list" id="slots-list" role="listbox" aria-label="Horarios disponiveis">
         {% if slots %}
           {% set prev_day = '' %}
@@ -24,7 +24,7 @@
             {% set prev_day = day_str %}
           {% endfor %}
         {% else %}
-          <div class="no-slots">Sem horarios. Contato: {{ config.COMPANY_PHONE }}</div>
+          <div class="no-slots">Sem horários disponíveis. Entre em contato: {{ config.COMPANY_PHONE }}</div>
         {% endif %}
       </div>
     </div>
@@ -32,7 +32,7 @@
     <div class="schedule-panel">
       <h3>Resumo</h3>
       <div class="rsm-row"><span class="rsm-label">Cliente</span><span class="rsm-value">{{ orcamento.cliente.nome }}</span></div>
-      <div class="rsm-row"><span class="rsm-label">Endereco</span><span class="rsm-value">{{ orcamento.cliente.endereco }}</span></div>
+      <div class="rsm-row"><span class="rsm-label">Endereço</span><span class="rsm-value">{{ orcamento.cliente.endereco }}</span></div>
       <div class="rsm-row"><span class="rsm-label">Cidade</span><span class="rsm-value">{{ orcamento.cliente.cidade }}</span></div>
       <div class="rsm-row"><span class="rsm-label">Validade</span><span class="rsm-value">{{ orcamento.data_validade.strftime('%d/%m/%Y') }}</span></div>
       <div class="rsm-total">R$ {{ "%.2f"|format(orcamento.valor_total) }}</div>

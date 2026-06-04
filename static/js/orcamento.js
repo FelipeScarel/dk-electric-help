@@ -3,6 +3,8 @@
 
   var tbody = document.getElementById("items-body");
   var grandTotalEl = document.getElementById("grand-total");
+  var totalMateriaisEl = document.getElementById("total-materiais");
+  var totalMaoObraEl = document.getElementById("total-mao-obra");
   var itemCounter = 0;
 
   // ============================================================
@@ -59,7 +61,7 @@
             document.getElementById("cidade").value = data.localidade || "";
             document.getElementById("estado").value = data.uf || "";
             status.textContent = data.localidade ? "CEP encontrado: " + data.localidade + "/" + data.uf : "";
-            status.style.color = "var(--color-success)";
+            status.style.color = "#2E7D32";
             toast("Endereco preenchido automaticamente", "success");
           })
           .catch(function () { status.textContent = "Erro ao buscar CEP"; });
@@ -70,37 +72,45 @@
   });
 
   // ============================================================
-  // ITEMS TABLE
+  // FORMATTER
   // ============================================================
   function formatBRL(val) {
     return "R$ " + val.toFixed(2).replace(".", ",");
   }
 
+  // ============================================================
+  // ITEMS TABLE — Material + Mao de Obra split
+  // ============================================================
   function addItemRow() {
     itemCounter++;
     var row = document.createElement("tr");
     row.innerHTML =
-      '<td><input type="text" class="inp-item" placeholder="1" maxlength="10" aria-label="Numero do item"></td>' +
+      '<td><input type="text" class="inp-item" placeholder="#" maxlength="10" aria-label="Numero do item"></td>' +
       '<td><input type="text" class="inp-desc" placeholder="Descricao do servico ou material" aria-label="Descricao"></td>' +
       '<td><input type="number" class="inp-qtd" value="1" min="1" step="1" inputmode="numeric" aria-label="Quantidade"></td>' +
-      '<td><input type="number" class="inp-vu" value="0.00" min="0" step="0.01" inputmode="decimal" aria-label="Valor unitario"></td>' +
+      '<td><input type="number" class="inp-vm" value="0.00" min="0" step="0.01" inputmode="decimal" aria-label="Valor do material unitario"></td>' +
+      '<td><input type="number" class="inp-vo" value="0.00" min="0" step="0.01" inputmode="decimal" aria-label="Valor da mao de obra unitario"></td>' +
       '<td><span class="item-total-readonly">' + formatBRL(0) + '</span></td>' +
       '<td><button type="button" class="btn-remove-row" title="Remover item" aria-label="Remover item">&times;</button></td>';
     tbody.appendChild(row);
 
     var qtdInp = row.querySelector(".inp-qtd");
-    var vuInp = row.querySelector(".inp-vu");
+    var vmInp = row.querySelector(".inp-vm");
+    var voInp = row.querySelector(".inp-vo");
     var totalSpan = row.querySelector(".item-total-readonly");
 
     function recalc() {
       var q = parseFloat(qtdInp.value) || 0;
-      var vu = parseFloat(vuInp.value) || 0;
-      totalSpan.textContent = formatBRL(q * vu);
+      var vm = parseFloat(vmInp.value) || 0;
+      var vo = parseFloat(voInp.value) || 0;
+      // Subtotal = (Valor Material + Valor Mao de Obra) * Quantidade
+      totalSpan.textContent = formatBRL((vm + vo) * q);
       recalcGrandTotal();
     }
 
     qtdInp.addEventListener("input", recalc);
-    vuInp.addEventListener("input", recalc);
+    vmInp.addEventListener("input", recalc);
+    voInp.addEventListener("input", recalc);
     row.querySelector(".btn-remove-row").addEventListener("click", function () {
       row.style.opacity = "0";
       row.style.transform = "translateX(-10px)";
@@ -115,13 +125,18 @@
   }
 
   function recalcGrandTotal() {
-    var total = 0;
+    var totalMateriais = 0;
+    var totalMaoObra = 0;
     tbody.querySelectorAll("tr").forEach(function (row) {
       var q = parseFloat(row.querySelector(".inp-qtd").value) || 0;
-      var vu = parseFloat(row.querySelector(".inp-vu").value) || 0;
-      total += q * vu;
+      var vm = parseFloat(row.querySelector(".inp-vm").value) || 0;
+      var vo = parseFloat(row.querySelector(".inp-vo").value) || 0;
+      totalMateriais += q * vm;
+      totalMaoObra += q * vo;
     });
-    grandTotalEl.textContent = formatBRL(total);
+    totalMateriaisEl.textContent = formatBRL(totalMateriais);
+    totalMaoObraEl.textContent = formatBRL(totalMaoObra);
+    grandTotalEl.textContent = formatBRL(totalMateriais + totalMaoObra);
   }
 
   function collectItems() {
@@ -129,13 +144,15 @@
     tbody.querySelectorAll("tr").forEach(function (row) {
       var desc = row.querySelector(".inp-desc").value.trim();
       var qtd = parseInt(row.querySelector(".inp-qtd").value) || 0;
-      var vu = parseFloat(row.querySelector(".inp-vu").value) || 0;
+      var vm = parseFloat(row.querySelector(".inp-vm").value) || 0;
+      var vo = parseFloat(row.querySelector(".inp-vo").value) || 0;
       if (desc && qtd > 0) {
         itens.push({
           item: row.querySelector(".inp-item").value.trim() || "",
           descricao: desc,
           quantidade: qtd,
-          valor_unitario: vu,
+          valor_material: vm,
+          valor_mao_obra: vo,
         });
       }
     });

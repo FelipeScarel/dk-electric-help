@@ -57,10 +57,10 @@ def _draw_section_header(c, y, text):
 
 
 def _draw_header(c, y):
-    """Cabecalho com logo + linha elegante."""
+    """Cabecalho com logo + CNPJ + contato + linha elegante."""
     logo_path = os.path.join(os.path.dirname(__file__), "static", "img", "Logo.png")
 
-    logo_h = 45
+    logo_h = 48
     if os.path.exists(logo_path):
         from PIL import Image
         img = Image.open(logo_path)
@@ -81,16 +81,22 @@ def _draw_header(c, y):
         c.setFillColor(BLACK)
         c.drawString(MARGIN + 138, y - 10, "HELP")
 
-    # Info direita
+    # Info direita: Telefone, Email, CNPJ
+    info_x = PAGE_W - MARGIN
     c.setFont(FONT_BOLD, 8)
     c.setFillColor(BLACK)
-    c.drawRightString(PAGE_W - MARGIN, y - 5, f"{Config.COMPANY_PHONE}")
+    c.drawRightString(info_x, y - 5, f"Tel: {Config.COMPANY_PHONE}")
+
     c.setFont(FONT_FAMILY, 7)
     c.setFillColor(GRAY)
-    c.drawRightString(PAGE_W - MARGIN, y - 16, Config.COMPANY_EMAIL)
+    c.drawRightString(info_x, y - 16, Config.COMPANY_EMAIL)
 
-    # Linha preta
-    y -= 35
+    c.setFont(FONT_FAMILY, 7)
+    c.setFillColor(GRAY_LIGHT)
+    c.drawRightString(info_x, y - 27, f"CNPJ: {Config.COMPANY_CNPJ}")
+
+    # Linha preta grossa
+    y -= 42
     c.setStrokeColor(BLACK)
     c.setLineWidth(3)
     c.line(MARGIN, y, PAGE_W - MARGIN, y)
@@ -147,7 +153,6 @@ def _draw_client_section(c, y, orcamento):
         c.drawString(x, cy, label)
         c.setFont(FONT_FAMILY, 10)
         c.setFillColor(BLACK)
-        # Trunca valor longo
         display_val = value if len(value) < 45 else value[:42] + "..."
         c.drawString(x, cy - 14, display_val)
 
@@ -160,58 +165,66 @@ def _draw_client_section(c, y, orcamento):
 
 
 def _draw_items_section(c, y, orcamento):
-    """Tabela de itens elegante e centralizada."""
+    """Tabela de itens com Material + Mao de Obra separados."""
     row_h = 20
     hdr_h = 18
 
-    # Header
+    # Header preto
     c.setFillColor(BLACK)
     c.rect(MARGIN, y - hdr_h, CONTENT_W, hdr_h, fill=1, stroke=0)
 
-    cols = [
-        (MARGIN, 0.08, "ITEM", TA_CENTER),
-        (MARGIN + CONTENT_W * 0.08, 0.44, "DESCRICAO", TA_LEFT),
-        (MARGIN + CONTENT_W * 0.52, 0.08, "QTD", TA_CENTER),
-        (MARGIN + CONTENT_W * 0.60, 0.20, "V. UNITARIO", TA_RIGHT),
-        (MARGIN + CONTENT_W * 0.80, 0.20, "V. TOTAL", TA_RIGHT),
+    # 7 colunas: ITEM | DESCRICAO | QTD | V. MATERIAL | V. MAO OBRA | V. TOTAL
+    col_defs = [
+        (MARGIN,                             0.04, "ITEM",          TA_CENTER),
+        (MARGIN + CONTENT_W * 0.04,          0.30, "DESCRICAO",     TA_LEFT),
+        (MARGIN + CONTENT_W * 0.34,          0.06, "QTD",           TA_CENTER),
+        (MARGIN + CONTENT_W * 0.40,          0.16, "V. MATERIAL",   TA_RIGHT),
+        (MARGIN + CONTENT_W * 0.56,          0.16, "V. MAO OBRA",   TA_RIGHT),
+        (MARGIN + CONTENT_W * 0.72,          0.16, "V. TOTAL",      TA_RIGHT),
     ]
 
-    c.setFont(FONT_BOLD, 8)
+    c.setFont(FONT_BOLD, 7)
     c.setFillColor(WHITE)
-    for x_start, w_frac, title, align in cols:
+    for x_start, w_frac, title, align in col_defs:
         w = CONTENT_W * w_frac
         if align == TA_CENTER:
             c.drawCentredString(x_start + w / 2, y - hdr_h + 5, title)
         elif align == TA_RIGHT:
-            c.drawRightString(x_start + w - 8, y - hdr_h + 5, title)
+            c.drawRightString(x_start + w - 6, y - hdr_h + 5, title)
         else:
             c.drawString(x_start + 6, y - hdr_h + 5, title)
 
     y -= hdr_h + 2
 
-    # Linhas
+    # Linhas de itens
     for idx, item in enumerate(orcamento.itens):
         cy = y - idx * row_h
         if idx % 2 == 1:
             c.setFillColor(LIGHT_BG)
             c.rect(MARGIN, cy - row_h + 2, CONTENT_W, row_h, fill=1, stroke=0)
 
-        vals = [
+        # Valores calculados
+        vm_total = item.quantidade * (item.valor_material or 0)
+        vo_total = item.quantidade * (item.valor_mao_obra or 0)
+        vt_total = vm_total + vo_total
+
+        row_vals = [
             (item.item or "", TA_CENTER),
-            (item.descricao[:60], TA_LEFT),
+            (item.descricao[:55], TA_LEFT),
             (str(item.quantidade), TA_CENTER),
-            (format_currency(item.valor_unitario), TA_RIGHT),
-            (format_currency(item.valor_total), TA_RIGHT),
+            (format_currency(item.valor_material or 0), TA_RIGHT),
+            (format_currency(item.valor_mao_obra or 0), TA_RIGHT),
+            (format_currency(vt_total), TA_RIGHT),
         ]
 
         c.setFont(FONT_FAMILY, 8)
         c.setFillColor(BLACK)
-        for (val, align), (x_start, w_frac, _, _) in zip(vals, cols):
+        for (val, align), (x_start, w_frac, _, _) in zip(row_vals, col_defs):
             w = CONTENT_W * w_frac
             if align == TA_CENTER:
                 c.drawCentredString(x_start + w / 2, cy - 12, val)
             elif align == TA_RIGHT:
-                c.drawRightString(x_start + w - 8, cy - 12, val)
+                c.drawRightString(x_start + w - 6, cy - 12, val)
             else:
                 c.drawString(x_start + 6, cy - 12, val)
 
@@ -223,23 +236,57 @@ def _draw_items_section(c, y, orcamento):
 
 
 def _draw_totals(c, y, orcamento):
-    """Bloco de total elegante a direita."""
-    box_w = CONTENT_W * 0.42
+    """Bloco de totais detalhado: Materiais, Mao de Obra, Total Geral."""
+    box_w = CONTENT_W * 0.46
     box_x = PAGE_W - MARGIN - box_w
-    box_h = 32
+    row_h = 22
+    box_h = row_h * 3 + 12
 
+    # Fundo do box
     c.setFillColor(LIGHT_BG)
     c.setStrokeColor(BLACK)
     c.setLineWidth(2)
     c.rect(box_x, y - box_h, box_w, box_h, fill=1, stroke=1)
 
+    inner_x = box_x + 10
+    inner_right = box_x + box_w - 10
+    inner_y = y - 14
+
+    # Linha 1: Total Materiais
+    c.setFont(FONT_BOLD, 7)
+    c.setFillColor(GRAY)
+    c.drawString(inner_x, inner_y, "TOTAL EM MATERIAIS")
+    c.setFont(FONT_FAMILY, 9)
+    c.setFillColor(BLACK)
+    c.drawRightString(inner_right, inner_y, format_currency(orcamento.total_materiais or 0))
+    inner_y -= row_h
+
+    # Separador
+    c.setStrokeColor(BORDER)
+    c.setLineWidth(0.5)
+    c.line(inner_x, inner_y + row_h / 2 + 6, inner_right, inner_y + row_h / 2 + 6)
+
+    # Linha 2: Total Mao de Obra
+    c.setFont(FONT_BOLD, 7)
+    c.setFillColor(GRAY)
+    c.drawString(inner_x, inner_y, "TOTAL EM MAO DE OBRA")
+    c.setFont(FONT_FAMILY, 9)
+    c.setFillColor(BLACK)
+    c.drawRightString(inner_right, inner_y, format_currency(orcamento.total_mao_obra or 0))
+    inner_y -= row_h
+
+    # Separador
+    c.setStrokeColor(BLACK)
+    c.setLineWidth(1)
+    c.line(inner_x, inner_y + row_h / 2 + 6, inner_right, inner_y + row_h / 2 + 6)
+
+    # Linha 3: Total Geral
     c.setFont(FONT_BOLD, 9)
     c.setFillColor(RED)
-    c.drawString(box_x + 10, y - 14, "VALOR TOTAL")
-
+    c.drawString(inner_x, inner_y, "VALOR TOTAL")
     c.setFont(FONT_BOLD, 13)
     c.setFillColor(BLACK)
-    c.drawRightString(box_x + box_w - 10, y - 14, format_currency(orcamento.valor_total))
+    c.drawRightString(inner_right, inner_y, format_currency(orcamento.valor_total or 0))
 
     return y - box_h - 12
 
@@ -280,12 +327,11 @@ def _draw_approval_page(c, y, orcamento, approval_url):
     # Box externo com borda grossa
     box_x = MARGIN + 20
     box_w = CONTENT_W - 40
-    box_top = y
     box_bottom = MARGIN + 40
 
-    _draw_framed_box(c, box_x, box_bottom, box_w, box_top - box_bottom, 2.5)
+    _draw_framed_box(c, box_x, box_bottom, box_w, y - box_bottom, 2.5)
 
-    inner_y = box_top - 45
+    inner_y = y - 45
 
     # Cabecalho da pagina
     c.setFont(FONT_BOLD, 16)
@@ -323,7 +369,7 @@ def _draw_approval_page(c, y, orcamento, approval_url):
 
     c.setFont(FONT_BOLD, 11)
     c.setFillColor(WHITE)
-    c.drawCentredString(PAGE_W / 2, btn_y + btn_h / 2 - 5, "ACEITAR E AGENDAR SERVICO")
+    c.drawCentredString(PAGE_W / 2, btn_y + btn_h / 2 - 5, "APROVAR E AGENDAR SERVICO")
 
     c.linkURL(approval_url, (btn_x, btn_y, btn_x + btn_w, btn_y + btn_h), thickness=0, color=None)
 
@@ -346,7 +392,7 @@ def generate_orcamento_pdf(orcamento, output_path=None, base_url=None):
     approval_url = f"{base_url}validar-orcamento?id={orcamento.hash_id}"
 
     c = canvas.Canvas(output_path, pagesize=A4)
-    c.setTitle(f"Protocolo DK {orcamento.hash_id}")
+    c.setTitle(f"Orcamento DK {orcamento.hash_id}")
     c.setAuthor("DK Electric Help")
     c.setSubject(f"Orcamento {orcamento.hash_id}")
 
@@ -376,16 +422,18 @@ def generate_orcamento_pdf(orcamento, output_path=None, base_url=None):
 
     c.setFont(FONT_FAMILY, 6)
     c.setFillColor(GRAY_LIGHT)
-    c.drawCentredString(PAGE_W / 2, MARGIN / 2, "DK Electric Help - Engenharia Eletrica | www.dkelectric.com.br")
+    c.drawCentredString(PAGE_W / 2, MARGIN / 2,
+                        f"DK Electric Help — Engenharia Eletrica | CNPJ: {Config.COMPANY_CNPJ}")
 
-    # ========== PAGINA 2 ==========
+    # ========== PAGINA 2 — APROVACAO ==========
     c.showPage()
     y = PAGE_H - MARGIN
     _draw_approval_page(c, y, orcamento, approval_url)
 
     c.setFont(FONT_FAMILY, 6)
     c.setFillColor(GRAY_LIGHT)
-    c.drawCentredString(PAGE_W / 2, MARGIN / 2, "DK Electric Help - Engenharia Eletrica | www.dkelectric.com.br")
+    c.drawCentredString(PAGE_W / 2, MARGIN / 2,
+                        f"DK Electric Help — Engenharia Eletrica | CNPJ: {Config.COMPANY_CNPJ}")
 
     c.save()
     return output_path

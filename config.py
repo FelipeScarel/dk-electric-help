@@ -22,8 +22,9 @@ class Config:
     PDF_OUTPUT_DIR = os.environ.get("PDF_OUTPUT_DIR") or os.path.join(BASE_DIR, "pdf_output")
     BASE_URL = os.environ.get("BASE_URL") or "http://localhost:5000"
     COMPANY_NAME = os.environ.get("COMPANY_NAME") or "DK Electric Help"
-    COMPANY_PHONE = os.environ.get("COMPANY_PHONE") or "(11) 99999-9999"
-    COMPANY_EMAIL = os.environ.get("COMPANY_EMAIL") or "contato@dkelectric.com.br"
+    COMPANY_PHONE = os.environ.get("COMPANY_PHONE") or "(19) 99624-5413"
+    COMPANY_EMAIL = os.environ.get("COMPANY_EMAIL") or "Dkeletrichelp@gmail.com"
+    COMPANY_CNPJ = os.environ.get("COMPANY_CNPJ") or "62.400.020/0001-07"
     PROPOSAL_VALIDITY_DAYS = int(os.environ.get("PROPOSAL_VALIDITY_DAYS", "15"))
 
     # WhatsApp via Meta Cloud API (funciona, testado)
@@ -31,4 +32,4 @@ class Config:
     META_WHATSAPP_PHONE_ID = os.environ.get("META_WHATSAPP_PHONE_ID") or "1125485747321060"
 
     # Numero que recebe notificacao de novos agendamentos
-    WHATSAPP_NOTIFY = os.environ.get("WHATSAPP_NOTIFY") or "5519987203886"
+    WHATSAPP_NOTIFY = os.environ.get("WHATSAPP_NOTIFY") or "5519996245413"

@@ -3,8 +3,8 @@
 {% block content %}
 <div class="form-page">
   <div class="form-header">
-    <h1>Novo Orcamento</h1>
-    <p>Preencha os dados do cliente e itens do servico. Tempo estimado: menos de 2 minutos.</p>
+    <h1>Novo Orçamento</h1>
+    <p>Preencha os dados do cliente e itens do serviço. Tempo estimado: menos de 2 minutos.</p>
   </div>
 
   <form id="form-orcamento" class="orcamento-form" autocomplete="off" novalidate>
@@ -14,7 +14,7 @@
       <div class="form-grid cols-2">
         <div class="field span-2">
           <label class="field-label" for="nome">Nome Completo <span class="req">*</span></label>
-          <input type="text" id="nome" class="field-input" required placeholder="Ex: Joao da Silva" autocomplete="name" aria-required="true">
+          <input type="text" id="nome" class="field-input" required placeholder="Ex: João da Silva" autocomplete="name" aria-required="true">
         </div>
         <div class="field">
           <label class="field-label" for="empresa">Empresa</label>
@@ -75,30 +75,41 @@
 
     <!-- ===== ITENS ===== -->
     <fieldset class="form-section">
-      <legend class="section-legend">Itens do Orcamento</legend>
+      <legend class="section-legend">Itens do Orçamento</legend>
       <div class="table-shell">
         <table class="items-table" id="items-table" role="grid" aria-label="Itens do orcamento">
           <thead><tr>
-            <th class="col-i">ITEM</th><th class="col-d">DESCRICAO</th><th class="col-q">QTD</th><th class="col-vu">V. UNITARIO</th><th class="col-vt">V. TOTAL</th><th class="col-act"></th>
+            <th class="col-i">ITEM</th><th class="col-d">DESCRICAO</th><th class="col-q">QTD</th><th class="col-vm">V. MATERIAL</th><th class="col-vo">V. MAO DE OBRA</th><th class="col-vt">V. TOTAL</th><th class="col-act"></th>
           </tr></thead>
           <tbody id="items-body"></tbody>
         </table>
       </div>
       <button type="button" class="btn-add-row" id="btn-add-item">+ Adicionar Item</button>
+      <p class="formula-hint">Subtotal = (Valor Material + Valor Mao de Obra) &times; Quantidade</p>
     </fieldset>
 
     <!-- ===== OBS ===== -->
     <fieldset class="form-section">
-      <legend class="section-legend">Observacoes</legend>
+      <legend class="section-legend">Observações</legend>
       <div class="field">
-        <textarea id="observacoes" class="field-textarea" rows="3" placeholder="Observacoes para o cliente..."></textarea>
+        <textarea id="observacoes" class="field-textarea" rows="3" placeholder="Observações para o cliente..."></textarea>
       </div>
     </fieldset>
 
     <!-- ===== TOTAL ===== -->
     <div class="summary-card">
+      <div class="summary-breakdown">
+        <div class="summary-row">
+          <span class="summary-label">Total em Materiais</span>
+          <span class="summary-value-sm" id="total-materiais">R$ 0,00</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Total em Mao de Obra</span>
+          <span class="summary-value-sm" id="total-mao-obra">R$ 0,00</span>
+        </div>
+      </div>
       <div class="summary-amount">
-        <span class="summary-label">VALOR TOTAL</span>
+        <span class="summary-label">VALOR TOTAL DO ORCAMENTO</span>
         <span class="summary-value" id="grand-total">R$ 0,00</span>
       </div>
       <button type="submit" class="btn-generate" id="btn-gerar">Gerar Orcamento PDF</button>
@@ -114,7 +125,7 @@
 <div class="modal-overlay" id="modal-sucesso" style="display:none" role="dialog" aria-modal="true" aria-label="Orcamento gerado">
   <div class="modal-card">
     <div class="modal-icon">✓</div>
-    <h2>Orcamento Gerado</h2>
+    <h2>Orçamento Gerado</h2>
     <p class="modal-protocol" id="modal-hash-id"></p>
     <div class="modal-actions">
       <a href="#" id="link-download-pdf" class="btn btn-primary btn-lg" target="_blank" rel="noopener">Baixar PDF</a>

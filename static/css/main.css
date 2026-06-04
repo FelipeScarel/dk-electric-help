@@ -285,7 +285,7 @@ p{color:var(--gray-500);line-height:1.6}
   background:var(--gray-50);transition:all .15s ease;
 }
 .items-table input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px rgba(214,0,0,.06)}
-.col-i{width:6%}.col-d{width:38%}.col-q{width:7%}.col-vu{width:19%}.col-vt{width:19%}.col-act{width:5%;text-align:center}
+.col-i{width:5%}.col-d{width:28%}.col-q{width:6%}.col-vm{width:16%}.col-vo{width:17%}.col-vt{width:18%}.col-act{width:4%;text-align:center}
 
 .item-total-readonly{font-weight:700;color:var(--black);padding:8px 10px;display:block;font-size:.8rem;font-family:var(--mono)}
 
@@ -316,9 +316,28 @@ p{color:var(--gray-500);line-height:1.6}
 .summary-amount{
   display:flex;align-items:center;justify-content:center;gap:16px;
   padding:18px;margin-bottom:20px;flex-wrap:wrap;
+  border-top:2px solid var(--black);
 }
 .summary-label{font-size:.7rem;font-weight:700;color:var(--red);letter-spacing:.1em}
 .summary-value{font-size:2.2rem;font-weight:900;color:var(--black);letter-spacing:-.04em;font-family:var(--mono)}
+
+.summary-breakdown{
+  display:flex;flex-direction:column;gap:8px;
+  padding:0 20px 16px;
+}
+.summary-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px;background:var(--gray-50);border-radius:6px;
+}
+.summary-value-sm{
+  font-size:1rem;font-weight:700;color:var(--gray-900);
+  font-family:var(--mono);letter-spacing:-.02em;
+}
+
+.formula-hint{
+  font-size:.62rem;color:var(--gray-400);margin-top:10px;
+  text-align:right;font-style:italic;letter-spacing:.02em;
+}
 
 .btn-generate{
   display:inline-flex;align-items:center;justify-content:center;gap:10px;
@@ -713,13 +732,14 @@ p{color:var(--gray-500);line-height:1.6}
 /*===============================================================
  QUANTITY INPUT FIX — wider, numbers fully visible
 ===============================================================*/
-.col-q{width:10%!important}
-.col-vu{width:17%!important}
-.col-vt{width:17%!important}
-.col-act{width:6%!important}
+.col-q{width:8%!important}
+.col-vm{width:15%!important}
+.col-vo{width:16%!important}
+.col-vt{width:16%!important}
+.col-act{width:5%!important}
 .items-table input[type="number"]{
-  min-width:60px;width:100%;text-align:center;
-  padding:8px 6px;font-size:.82rem;
+  min-width:56px;width:100%;text-align:center;
+  padding:8px 4px;font-size:.82rem;
   -moz-appearance:textfield;
 }
 .items-table input[type="number"]::-webkit-inner-spin-button,

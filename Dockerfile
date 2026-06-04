@@ -14,8 +14,7 @@ COPY . .
 
 RUN mkdir -p pdf_output
 
-EXPOSE 8000
-
 ENV PYTHONUNBUFFERED=1
 
+# Render injeta a variavel $PORT automaticamente
 CMD gunicorn app:app --bind 0.0.0.0:${PORT:-8000} --workers 4 --timeout 120
