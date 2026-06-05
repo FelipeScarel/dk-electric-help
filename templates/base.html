@@ -19,7 +19,7 @@
     <button class="hamburger" id="hamburger-btn" aria-label="Abrir menu" aria-expanded="false" onclick="document.getElementById('sidebar').classList.toggle('open');this.setAttribute('aria-expanded',document.getElementById('sidebar').classList.contains('open'))">
       <span></span><span></span><span></span>
     </button>
-    <span class="mobile-bar-title">DK Electric Help</span>
+    <img src="{{ url_for('static', filename='img/Logo.png') }}" alt="DK Electric Help" class="mobile-bar-logo">
     <span class="mobile-bar-spacer"></span>
   </header>
 

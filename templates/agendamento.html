@@ -24,7 +24,7 @@
             {% set prev_day = day_str %}
           {% endfor %}
         {% else %}
-          <div class="no-slots">Sem horários disponíveis. Entre em contato: {{ config.COMPANY_PHONE }}</div>
+          <div class="no-slots">Sem horários disponíveis. Entre em contato: <a href="https://api.whatsapp.com/send?phone=5519996245413" target="_blank" rel="noopener" style="color:var(--red);font-weight:700">(19) 99624-5413</a></div>
         {% endif %}
       </div>
     </div>
@@ -39,6 +39,7 @@
       <div class="selected-indicator" id="selected-info" style="display:none">Selecionado:<strong id="selected-date-text"></strong></div>
       <button class="btn-schedule-confirm" id="btn-confirmar" disabled data-hash="{{ orcamento.hash_id }}">Confirmar Agendamento</button>
       <div id="schedule-message" style="display:none;margin-top:10px"></div>
+      <p style="text-align:center;font-size:.7rem;color:var(--gray-400);margin-top:14px">Dúvidas? <a href="https://api.whatsapp.com/send?phone=5519996245413" target="_blank" rel="noopener" style="color:var(--red);font-weight:700">(19) 99624-5413</a></p>
     </div>
   </div>
 </div>

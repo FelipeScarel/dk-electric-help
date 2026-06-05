@@ -9,3 +9,4 @@ start.ps1
 .wpp_session/
 .DS_Store
 Thumbs.db
+PyWhatKit_DB.txt

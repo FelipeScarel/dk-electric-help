@@ -85,11 +85,11 @@
     itemCounter++;
     var row = document.createElement("tr");
     row.innerHTML =
-      '<td><input type="text" class="inp-item" placeholder="#" maxlength="10" aria-label="Numero do item"></td>' +
+      '<td><input type="text" class="inp-item" placeholder="#" maxlength="6" aria-label="Numero do item"></td>' +
       '<td><input type="text" class="inp-desc" placeholder="Descricao do servico ou material" aria-label="Descricao"></td>' +
       '<td><input type="number" class="inp-qtd" value="1" min="1" step="1" inputmode="numeric" aria-label="Quantidade"></td>' +
-      '<td><input type="number" class="inp-vm" value="0.00" min="0" step="0.01" inputmode="decimal" aria-label="Valor do material unitario"></td>' +
-      '<td><input type="number" class="inp-vo" value="0.00" min="0" step="0.01" inputmode="decimal" aria-label="Valor da mao de obra unitario"></td>' +
+      '<td><input type="number" class="inp-vm" value="0.00" min="0" step="0.01" inputmode="decimal" aria-label="Valor do material unitario" style="text-align:right;font-family:JetBrains Mono,monospace"></td>' +
+      '<td><input type="number" class="inp-vo" value="0.00" min="0" step="0.01" inputmode="decimal" aria-label="Valor da mao de obra unitario" style="text-align:right;font-family:JetBrains Mono,monospace"></td>' +
       '<td><span class="item-total-readonly">' + formatBRL(0) + '</span></td>' +
       '<td><button type="button" class="btn-remove-row" title="Remover item" aria-label="Remover item">&times;</button></td>';
     tbody.appendChild(row);

@@ -205,7 +205,7 @@ def validar_orcamento():
     if orcamento.data_validade < _utcnow() and orcamento.status == "PENDENTE":
         return render_template(
             "erro.html",
-            mensagem="Este orcamento expirou. Entre em contato para renova-lo.",
+            mensagem="Este orcamento expirou. Entre em contato pelo telefone (19) 99624-5413 para renova-lo.",
         ), 410
 
     if orcamento.status == "PENDENTE":

@@ -68,13 +68,19 @@ img{max-width:100%;height:auto;display:block}
 }
 
 .sidebar-brand{
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  padding:28px 20px 20px;border-bottom:1px solid rgba(255,255,255,.06);
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:24px 16px 18px;border-bottom:1px solid rgba(255,255,255,.06);
 }
-.sidebar-logo{height:44px;width:auto;filter:brightness(1) drop-shadow(0 2px 8px rgba(214,0,0,.3))}
+.sidebar-logo{
+  width:100%;max-width:180px;height:auto;
+  object-fit:contain;
+  filter:brightness(1.05) drop-shadow(0 4px 16px rgba(214,0,0,.35));
+  transition:filter .3s ease;
+}
+.sidebar-logo:hover{filter:brightness(1.1) drop-shadow(0 6px 24px rgba(214,0,0,.5))}
 .sidebar-name{
-  font-size:.7rem;font-weight:700;color:var(--white);
-  text-transform:uppercase;letter-spacing:.15em;
+  font-size:.65rem;font-weight:700;color:var(--gray-400);
+  text-transform:uppercase;letter-spacing:.18em;
 }
 
 .sidebar-nav{
@@ -139,10 +145,11 @@ p{color:var(--gray-500);line-height:1.6}
 ===============================================================*/
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  padding:11px 24px;border-radius:6px;font-weight:600;
-  font-size:.8rem;font-family:var(--font);cursor:pointer;
+  padding:12px 24px;border-radius:6px;font-weight:600;
+  font-size:.82rem;font-family:var(--font);cursor:pointer;
   text-decoration:none;border:none;transition:all .2s ease;
   letter-spacing:.02em;white-space:nowrap;line-height:1;
+  min-height:44px;
 }
 .btn:active{transform:scale(.97)}
 .btn-primary{background:var(--black);color:var(--white)}
@@ -267,6 +274,8 @@ p{color:var(--gray-500);line-height:1.6}
 .table-shell{
   overflow-x:auto;-webkit-overflow-scrolling:touch;
   border-radius:8px;border:1px solid var(--gray-150);
+  -webkit-mask-image: linear-gradient(to right,black 92%,transparent 98%);
+  mask-image: linear-gradient(to right,black 92%,transparent 98%);
 }
 .items-table{width:100%;min-width:680px;border-collapse:collapse;font-size:.8rem}
 .items-table thead th{
@@ -285,13 +294,13 @@ p{color:var(--gray-500);line-height:1.6}
   background:var(--gray-50);transition:all .15s ease;
 }
 .items-table input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px rgba(214,0,0,.06)}
-.col-i{width:5%}.col-d{width:28%}.col-q{width:6%}.col-vm{width:16%}.col-vo{width:17%}.col-vt{width:18%}.col-act{width:4%;text-align:center}
+.col-i{width:7%}.col-d{width:27%}.col-q{width:7%}.col-vm{width:15%}.col-vo{width:16%}.col-vt{width:17%}.col-act{width:5%;text-align:center}
 
 .item-total-readonly{font-weight:700;color:var(--black);padding:8px 10px;display:block;font-size:.8rem;font-family:var(--mono)}
 
 .btn-remove-row{
   background:none;border:1px solid var(--gray-150);color:var(--gray-400);
-  font-size:1rem;cursor:pointer;width:30px;height:30px;border-radius:5px;
+  font-size:1.2rem;cursor:pointer;min-width:44px;min-height:44px;border-radius:6px;
   display:inline-flex;align-items:center;justify-content:center;transition:all .2s ease;
 }
 .btn-remove-row:hover{background:var(--red);color:var(--white);border-color:var(--red)}
@@ -299,8 +308,9 @@ p{color:var(--gray-500);line-height:1.6}
 .btn-add-row{
   margin-top:14px;display:inline-flex;align-items:center;gap:8px;
   background:var(--black);color:var(--white);border:none;
-  padding:10px 20px;border-radius:6px;font-size:.72rem;
+  padding:12px 22px;border-radius:6px;font-size:.76rem;
   font-weight:600;cursor:pointer;font-family:var(--font);transition:all .2s ease;
+  min-height:44px;
 }
 .btn-add-row:hover{background:var(--gray-800)}
 
@@ -586,10 +596,11 @@ p{color:var(--gray-500);line-height:1.6}
 .day-header:first-child{border-top:none;margin-top:0;padding-top:0}
 
 .slot-btn{
-  display:flex;align-items:center;justify-content:space-between;padding:11px 15px;
+  display:flex;align-items:center;justify-content:space-between;padding:13px 16px;
   border:1px solid var(--gray-150);border-radius:6px;cursor:pointer;
   transition:all .15s ease;background:var(--gray-50);
   font-family:var(--font);width:100%;text-align:left;
+  min-height:48px;
 }
 .slot-btn:hover{border-color:var(--black);background:var(--white);transform:translateX(3px)}
 .slot-btn.selected{border-color:var(--red);background:#FFF5F5;box-shadow:0 0 0 2px rgba(214,0,0,.08)}
@@ -640,7 +651,10 @@ p{color:var(--gray-500);line-height:1.6}
 .hamburger:active{transform:scale(.92)}
 
 .sidebar-overlay{display:none}
-.mobile-bar-title{color:var(--white);font-size:.78rem;font-weight:700;letter-spacing:.04em}
+.mobile-bar-logo{
+  height:36px;width:auto;object-fit:contain;
+  filter:brightness(1.05) drop-shadow(0 2px 6px rgba(214,0,0,.25));
+}
 .mobile-bar-spacer{width:40px}
 
 /*===============================================================
@@ -651,7 +665,7 @@ p{color:var(--gray-500);line-height:1.6}
   .mobile-bar{
     display:flex;align-items:center;justify-content:space-between;
     position:fixed;top:0;left:0;right:0;z-index:1100;
-    height:56px;padding:0 16px;
+    height:56px;padding:0 14px;
     background:rgba(8,8,8,.95);
     backdrop-filter:saturate(180%) blur(20px);
     -webkit-backdrop-filter:saturate(180%) blur(20px);
@@ -716,9 +730,9 @@ p{color:var(--gray-500);line-height:1.6}
   .sidebar{width:200px}
   .main-wrapper{margin-left:200px}
   .main-area{padding:28px 24px 20px}
-  .sidebar-logo{height:36px}
+  .sidebar-logo{max-width:150px}
   .sidebar-link{font-size:.72rem;padding:9px 12px}
-  .sidebar-brand{padding:22px 14px 16px}
+  .sidebar-brand{padding:20px 12px 14px}
 }
 
 /*===============================================================
@@ -730,15 +744,29 @@ p{color:var(--gray-500);line-height:1.6}
 }
 
 /*===============================================================
- QUANTITY INPUT FIX — wider, numbers fully visible
+ QUANTITY & MONETARY INPUT FIX — wider, fully visible
 ===============================================================*/
+.col-i{width:8%!important}
 .col-q{width:8%!important}
 .col-vm{width:15%!important}
 .col-vo{width:16%!important}
 .col-vt{width:16%!important}
 .col-act{width:5%!important}
+
+/* Item number input — large enough for multi-digit */
+.items-table .inp-item{
+  min-width:40px;width:100%;text-align:center;
+  padding:8px 6px;font-size:.82rem;font-weight:600;
+}
+
+/* Monetary inputs — right-aligned for proper currency display */
+.items-table .inp-vm,
+.items-table .inp-vo{
+  text-align:right;font-family:var(--mono);
+}
+
 .items-table input[type="number"]{
-  min-width:56px;width:100%;text-align:center;
+  min-width:58px;width:100%;text-align:center;
   padding:8px 4px;font-size:.82rem;
   -moz-appearance:textfield;
 }
