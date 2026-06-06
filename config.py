@@ -27,6 +27,13 @@ class Config:
     COMPANY_CNPJ = os.environ.get("COMPANY_CNPJ") or "62.400.020/0001-07"
     PROPOSAL_VALIDITY_DAYS = int(os.environ.get("PROPOSAL_VALIDITY_DAYS", "15"))
 
+    # Sessao
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
+
+    # Login do painel administrativo
+    ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL") or "Dkelectrichelp@gmail.com"
+    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD") or "Deedks123@"
+
     # WhatsApp via Meta Cloud API (funciona, testado)
     META_WHATSAPP_TOKEN = os.environ.get("META_WHATSAPP_TOKEN") or "EAATJO13J2TgBRp9buxJJW736yqgHplyihPxZBp6y1dgVK2K6UZChzkvGDwiZAOnAp5qRGWoGqCYkZBAHDdjae33lrl93303zWvY3mYk6l6VVhGtb4LP5vnSKYD5ZA3EC3xczmFDGBf7mvEZAiGkpL6QYLVNDnZCZCAJfDbgLZAYM1YIRvmBpBOSRBGhXLiIfHZBM30nmRZB3I7WsFVb4yJhNdKf2y8rLqOkCgtiYdM5Wi1CpoxGzkGBdkFMO7aK3qecUGKg5cpGOqXOkWnM1mCsAU8x"
     META_WHATSAPP_PHONE_ID = os.environ.get("META_WHATSAPP_PHONE_ID") or "1125485747321060"

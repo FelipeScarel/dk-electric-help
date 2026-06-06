@@ -1,0 +1,985 @@
+{% extends "base.html" %}
+{% block title %}Agenda — DK Electric Help{% endblock %}
+{% block content %}
+<div class="agenda-admin-page">
+
+  <!-- ===== CABECALHO INSTITUCIONAL ===== -->
+  <div class="agenda-header">
+    <div class="agenda-header-brand">
+      <h1>Painel de Controle da Agenda</h1>
+      <p>Gerencie a disponibilidade de horarios, bloqueios e agendamentos.</p>
+    </div>
+    <div class="agenda-header-info">
+      <div class="agenda-info-item">
+        <span class="agenda-info-icon">✉</span>
+        <span>Dkeletrichelp@gmail.com</span>
+      </div>
+      <div class="agenda-info-item">
+        <span class="agenda-info-icon">📋</span>
+        <span>CNPJ: 62.400.020/0001-07</span>
+      </div>
+      <div class="agenda-info-item highlight">
+        <span class="agenda-info-icon">📞</span>
+        <span>(19) 99624-5413</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STATS BAR ===== -->
+  <div class="agenda-stats" id="agenda-stats">
+    <div class="agenda-stat-card">
+      <div class="agenda-stat-num" id="stat-total">{{ stats.total_slots }}</div>
+      <div class="agenda-stat-label">Total de Slots</div>
+    </div>
+    <div class="agenda-stat-card accent-green">
+      <div class="agenda-stat-num" id="stat-disponiveis">{{ stats.disponiveis }}</div>
+      <div class="agenda-stat-label">Disponiveis</div>
+    </div>
+    <div class="agenda-stat-card accent-red">
+      <div class="agenda-stat-num" id="stat-bloqueados">{{ stats.bloqueados }}</div>
+      <div class="agenda-stat-label">Bloqueados</div>
+    </div>
+    <div class="agenda-stat-card accent-blue">
+      <div class="agenda-stat-num" id="stat-agendados">{{ stats.agendados }}</div>
+      <div class="agenda-stat-label">Agendados</div>
+    </div>
+  </div>
+
+  <!-- ===== PAINEL DE BLOQUEIO EM MASSA ===== -->
+  <div class="agenda-controls">
+    <h3 class="agenda-section-title">Bloqueio em Massa</h3>
+    <div class="agenda-controls-grid">
+      <div class="agenda-ctrl-field">
+        <label class="agenda-ctrl-label">Data Inicio</label>
+        <input type="date" id="blk-data-inicio" class="agenda-input" value="{{ data_inicio }}">
+      </div>
+      <div class="agenda-ctrl-field">
+        <label class="agenda-ctrl-label">Data Fim</label>
+        <input type="date" id="blk-data-fim" class="agenda-input" value="{{ data_fim }}">
+      </div>
+      <div class="agenda-ctrl-field">
+        <label class="agenda-ctrl-label">Periodo (opcional)</label>
+        <select id="blk-periodo" class="agenda-select">
+          <option value="">Dia Inteiro</option>
+          <option value="08:00">Manha (08:00 - 11:30)</option>
+          <option value="13:00">Tarde (13:00 - 18:00)</option>
+        </select>
+      </div>
+      <div class="agenda-ctrl-field span-2">
+        <label class="agenda-ctrl-label">Motivo do Bloqueio</label>
+        <input type="text" id="blk-motivo" class="agenda-input" placeholder="Ex: Servico continuo em obra — Shopping Iguatemi">
+      </div>
+    </div>
+    <button class="btn btn-danger btn-lg" id="btn-bloquear" onclick="bloquearPeriodo()">
+      🔒 Bloquear Periodo
+    </button>
+    <span class="agenda-ctrl-hint" id="blk-feedback"></span>
+  </div>
+
+  <!-- ===== CONFIGURACAO DE HORARIOS SEMANAIS ===== -->
+  <div class="agenda-controls" id="panel-config-semanal">
+    <div class="agenda-section-header" style="margin-bottom:14px">
+      <h3 class="agenda-section-title">Configuracao Semanal de Horarios</h3>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm btn-outline" onclick="mostrarAdicionarPeriodo()">+ Adicionar Periodo</button>
+        <button class="btn btn-sm btn-primary" id="btn-regenerar" onclick="regenerarSlots()">🔄 Regenerar Slots</button>
+      </div>
+    </div>
+
+    <!-- Form para adicionar novo periodo -->
+    <div id="form-novo-periodo" style="display:none;margin-bottom:16px;padding:16px;background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-150)">
+      <div class="agenda-controls-grid">
+        <div class="agenda-ctrl-field">
+          <label class="agenda-ctrl-label">Dia da Semana</label>
+          <select id="novo-dia-semana" class="agenda-select">
+            <option value="0">Segunda-feira</option>
+            <option value="1">Terca-feira</option>
+            <option value="2">Quarta-feira</option>
+            <option value="3">Quinta-feira</option>
+            <option value="4">Sexta-feira</option>
+            <option value="5">Sabado</option>
+            <option value="6">Domingo</option>
+          </select>
+        </div>
+        <div class="agenda-ctrl-field">
+          <label class="agenda-ctrl-label">Hora Inicio</label>
+          <input type="time" id="novo-hora-inicio" class="agenda-input" value="08:00">
+        </div>
+        <div class="agenda-ctrl-field">
+          <label class="agenda-ctrl-label">Hora Fim</label>
+          <input type="time" id="novo-hora-fim" class="agenda-input" value="12:00">
+        </div>
+        <div class="agenda-ctrl-field" style="align-self:flex-end">
+          <button class="btn btn-sm btn-primary" onclick="adicionarPeriodo()">Salvar</button>
+          <button class="btn btn-sm btn-outline" onclick="document.getElementById('form-novo-periodo').style.display='none'" style="margin-left:6px">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de horarios por dia -->
+    <div class="table-shell" style="mask-image:none;-webkit-mask-image:none">
+      <table class="agenda-config-table" id="tabela-config">
+        <thead>
+          <tr>
+            <th>Dia</th>
+            <th>Inicio</th>
+            <th>Fim</th>
+            <th>Status</th>
+            <th>Acoes</th>
+          </tr>
+        </thead>
+        <tbody id="config-tbody">
+          <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--gray-400)">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.62rem;color:var(--gray-400);margin-top:8px;font-style:italic">Alteracoes na configuracao so afetam novos slots. Clique em "Regenerar Slots" para aplicar a todos os dias futuros.</p>
+  </div>
+
+  <!-- ===== GRADE DA AGENDA ===== -->
+  <div class="agenda-section-header">
+    <h3 class="agenda-section-title">Grade de Horarios</h3>
+    <div class="agenda-nav">
+      <button class="btn btn-sm btn-outline" id="btn-semana-anterior" onclick="navegarSemana(-1)">← Semana Anterior</button>
+      <span class="agenda-range-label" id="range-label">{{ data_inicio }} a {{ data_fim }}</span>
+      <button class="btn btn-sm btn-outline" id="btn-proxima-semana" onclick="navegarSemana(1)">Proxima Semana →</button>
+    </div>
+  </div>
+
+  <div class="agenda-loading" id="agenda-loading" style="display:none">
+    <div class="skeleton" style="height:300px;border-radius:10px"></div>
+  </div>
+
+  <div class="agenda-grid" id="agenda-grid" role="grid" aria-label="Grade de horarios">
+    <!-- Preenchido via JS -->
+  </div>
+
+  <div class="agenda-empty" id="agenda-empty" style="display:none">
+    <p>Nenhum slot encontrado neste periodo.</p>
+    <button class="btn btn-outline" onclick="gerarSlots()">Gerar Slots para este Periodo</button>
+  </div>
+
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast" style="display:none" role="status" aria-live="polite"></div>
+
+<!-- ===== MODAL: AGENDAMENTO MANUAL ===== -->
+<div class="agenda-modal-overlay" id="modal-agendar-manual" style="display:none" role="dialog" aria-modal="true">
+  <div class="agenda-modal-card">
+    <button class="agenda-modal-close" onclick="fecharModalManual()" aria-label="Fechar">✕</button>
+    <h3>Agendamento Manual</h3>
+    <p style="font-size:.78rem;color:var(--gray-500);margin-bottom:18px">Forca o agendamento de um cliente por fora do fluxo do PDF.</p>
+    <div class="agenda-modal-body">
+      <div class="agenda-ctrl-field">
+        <label class="agenda-ctrl-label">Orcamento (Hash ID)</label>
+        <select id="manual-hash-id" class="agenda-select" style="width:100%">
+          <option value="">Selecione um orcamento...</option>
+          {% for o in orcamentos_agendaveis %}
+          <option value="{{ o.hash_id }}">{{ o.hash_id }} — {{ o.cliente.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="agenda-ctrl-field">
+        <label class="agenda-ctrl-label">Data</label>
+        <input type="date" id="manual-data" class="agenda-input">
+      </div>
+      <div class="agenda-ctrl-field">
+        <label class="agenda-ctrl-label">Periodo</label>
+        <select id="manual-periodo" class="agenda-select">
+          <option value="">Selecione...</option>
+          <option value="08:00 - 11:30">Manha (08:00 - 11:30)</option>
+          <option value="13:00 - 18:00">Tarde (13:00 - 18:00)</option>
+        </select>
+      </div>
+      <div class="agenda-ctrl-field span-2">
+        <label class="agenda-ctrl-label">Observacoes</label>
+        <input type="text" id="manual-obs" class="agenda-input" placeholder="Observacoes (opcional)">
+      </div>
+    </div>
+    <div class="agenda-modal-footer">
+      <button class="btn btn-outline" onclick="fecharModalManual()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-manual" onclick="confirmarAgendamentoManual()">Confirmar Agendamento</button>
+    </div>
+    <div id="manual-feedback" style="display:none;margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- ===== MODAL: REAGENDAR ===== -->
+<div class="agenda-modal-overlay" id="modal-reagendar" style="display:none" role="dialog" aria-modal="true">
+  <div class="agenda-modal-card">
+    <button class="agenda-modal-close" onclick="fecharModalReagendar()" aria-label="Fechar">✕</button>
+    <h3>Reagendar Servico</h3>
+    <p style="font-size:.78rem;color:var(--gray-500);margin-bottom:18px" id="reagendar-info"></p>
+    <div class="agenda-modal-body">
+      <input type="hidden" id="reagendar-id">
+      <div class="agenda-ctrl-field">
+        <label class="agenda-ctrl-label">Nova Data</label>
+        <input type="date" id="reagendar-data" class="agenda-input">
+      </div>
+      <div class="agenda-ctrl-field">
+        <label class="agenda-ctrl-label">Novo Periodo</label>
+        <select id="reagendar-periodo" class="agenda-select">
+          <option value="">Selecione...</option>
+          <option value="08:00 - 11:30">Manha (08:00 - 11:30)</option>
+          <option value="13:00 - 18:00">Tarde (13:00 - 18:00)</option>
+        </select>
+      </div>
+    </div>
+    <div class="agenda-modal-footer">
+      <button class="btn btn-outline" onclick="fecharModalReagendar()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-reagendar" onclick="confirmarReagendamento()">Reagendar</button>
+    </div>
+    <div id="reagendar-feedback" style="display:none;margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- ===== MODAL: CONFIRMAR EXCLUSAO/CANCELAMENTO ===== -->
+<div class="agenda-modal-overlay" id="modal-confirmar-acao" style="display:none" role="dialog" aria-modal="true">
+  <div class="agenda-modal-card agenda-modal-sm">
+    <div class="modal-icon">!</div>
+    <h3 id="confirmar-titulo">Confirmar Acao</h3>
+    <p style="color:var(--gray-500);margin:8px 0 20px" id="confirmar-mensagem"></p>
+    <div class="agenda-modal-footer">
+      <button class="btn btn-outline" onclick="fecharModalConfirmar()">Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirmar-acao" onclick="executarAcaoConfirmada()">Confirmar</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ===============================================================
+// ESTADO GLOBAL
+// ===============================================================
+var AGENDA = {
+  dataInicio: '{{ data_inicio }}',
+  dataFim: '{{ data_fim }}',
+  dias: [],
+  stats: {},
+  acaoPendente: null,
+  acaoArgs: null
+};
+
+var DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
+var DIAS_SEMANA_LONGO = ['Domingo', 'Segunda-feira', 'Terca-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sabado'];
+
+// ===============================================================
+// INICIALIZACAO
+// ===============================================================
+(function init() {
+  carregarAgenda();
+})();
+
+function carregarAgenda() {
+  var loading = document.getElementById('agenda-loading');
+  var grid = document.getElementById('agenda-grid');
+  var empty = document.getElementById('agenda-empty');
+
+  loading.style.display = 'block';
+  grid.innerHTML = '';
+  empty.style.display = 'none';
+
+  var url = '/api/admin/agenda?data_inicio=' + AGENDA.dataInicio + '&data_fim=' + AGENDA.dataFim;
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      AGENDA.dias = data.dias || [];
+      AGENDA.stats = data.stats || {};
+      loading.style.display = 'none';
+
+      if (AGENDA.dias.length === 0) {
+        empty.style.display = 'block';
+      } else {
+        renderizarGrid();
+      }
+      atualizarStats();
+      atualizarRangeLabel();
+    })
+    .catch(function(e) {
+      loading.style.display = 'none';
+      mostrarToast('Erro ao carregar agenda: ' + e.message, 'error');
+    });
+}
+
+// ===============================================================
+// RENDERIZACAO DO GRID
+// ===============================================================
+function renderizarGrid() {
+  var grid = document.getElementById('agenda-grid');
+  var html = '';
+
+  AGENDA.dias.forEach(function(dia) {
+    var data = new Date(dia.data + 'T00:00:00');
+    var diaSemana = DIAS_SEMANA[data.getDay()];
+    var diaMes = String(data.getDate()).padStart(2, '0');
+    var mes = String(data.getMonth() + 1).padStart(2, '0');
+    var dataFormatada = diaMes + '/' + mes;
+    var hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    var passado = data < hoje;
+
+    // Determina status geral do dia
+    var todosBloqueados = dia.slots.every(function(s) { return s.status === 'bloqueado'; });
+    var todosAgendados = dia.slots.every(function(s) { return s.status === 'agendado'; });
+    var algumAgendado = dia.slots.some(function(s) { return s.status === 'agendado'; });
+    var algumBloqueado = dia.slots.some(function(s) { return s.status === 'bloqueado'; });
+
+    var cardClass = 'agenda-day-card';
+    if (passado) cardClass += ' is-past';
+    else if (todosBloqueados) cardClass += ' is-blocked';
+    else if (todosAgendados) cardClass += ' is-booked';
+
+    html += '<div class="' + cardClass + '" data-data="' + dia.data + '">';
+    html += '  <div class="agenda-day-header">';
+    html += '    <div class="agenda-day-label">';
+    html += '      <span class="agenda-day-name">' + diaSemana + '</span>';
+    html += '      <span class="agenda-day-date">' + dataFormatada + '</span>';
+    html += '    </div>';
+    html += '    <div class="agenda-day-badges">';
+    if (todosBloqueados) html += '<span class="agenda-badge badge-blocked">Bloqueado</span>';
+    else if (todosAgendados) html += '<span class="agenda-badge badge-booked">Lotado</span>';
+    else if (algumAgendado) html += '<span class="agenda-badge badge-partial">Parcial</span>';
+    html += '    </div>';
+    html += '  </div>';
+
+    html += '  <div class="agenda-day-slots">';
+    dia.slots.forEach(function(slot) {
+      var slotClass = 'agenda-slot-row';
+      if (slot.status === 'bloqueado') slotClass += ' slot-blocked';
+      else if (slot.status === 'agendado') slotClass += ' slot-booked';
+      else if (passado) slotClass += ' slot-past';
+      else slotClass += ' slot-available';
+
+      html += '  <div class="' + slotClass + '">';
+      html += '    <span class="slot-time-badge">' + slot.hora_inicio + ' - ' + slot.hora_fim + '</span>';
+      html += '    <span class="slot-status-text">';
+      if (slot.status === 'agendado' && slot.agendamento) {
+        html += 'Agendado: <strong>' + escapeHtml(slot.agendamento.cliente) + '</strong>';
+        html += ' <code style="font-size:.6rem">' + slot.agendamento.hash_id + '</code>';
+      } else if (slot.status === 'bloqueado') {
+        html += 'Bloqueado';
+        if (slot.motivo_bloqueio) html += ' <em style="font-size:.62rem;color:var(--gray-400)">' + escapeHtml(slot.motivo_bloqueio.substring(0, 40)) + '</em>';
+      } else if (passado) {
+        html += 'Expirado';
+      } else {
+        html += 'Disponivel';
+      }
+      html += '    </span>';
+      html += '    <span class="slot-actions">';
+      if (slot.status === 'bloqueado' && slot.bloqueio_id) {
+        html += '      <button class="slot-action-btn action-free" title="Liberar" onclick="liberarBloqueio(' + slot.bloqueio_id + ')" aria-label="Liberar horario">Liberar</button>';
+      } else if (slot.status === 'agendado' && slot.agendamento) {
+        html += '      <button class="slot-action-btn action-reschedule" title="Reagendar" onclick="abrirReagendar(' + slot.agendamento.id + ',\'' + escapeHtml(slot.agendamento.cliente) + '\',\'' + slot.agendamento.hash_id + '\')" aria-label="Reagendar">Reagendar</button>';
+        html += '      <button class="slot-action-btn action-cancel" title="Cancelar" onclick="cancelarAgendamento(' + slot.agendamento.id + ')" aria-label="Cancelar agendamento">Cancelar</button>';
+      } else if (!passado) {
+        html += '      <span style="font-size:.6rem;color:var(--gray-400)">—</span>';
+      }
+      html += '    </span>';
+      html += '  </div>';
+    });
+    html += '  </div>';
+
+    // Acoes do dia
+    html += '  <div class="agenda-day-actions">';
+    if (!passado) {
+      html += '    <button class="btn btn-sm ' + (todosBloqueados ? 'btn-outline' : 'btn-danger') + '" onclick="' + (todosBloqueados ? 'liberarDia(\'' + dia.data + '\')' : 'bloquearDia(\'' + dia.data + '\')') + '">';
+      html +=       todosBloqueados ? '🔓 Liberar Dia' : '🔒 Bloquear Dia';
+      html += '    </button>';
+      html += '    <button class="btn btn-sm btn-outline" onclick="confirmarLimparDia(\'' + dia.data + '\')">🗑 Limpar Dia</button>';
+    }
+    html += '  </div>';
+
+    html += '</div>';
+  });
+
+  grid.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  var div = document.createElement('div');
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+
+function atualizarStats() {
+  document.getElementById('stat-total').textContent = AGENDA.stats.total_slots || 0;
+  document.getElementById('stat-disponiveis').textContent = AGENDA.stats.disponiveis || 0;
+  document.getElementById('stat-bloqueados').textContent = AGENDA.stats.bloqueados || 0;
+  document.getElementById('stat-agendados').textContent = AGENDA.stats.agendados || 0;
+}
+
+function atualizarRangeLabel() {
+  document.getElementById('range-label').textContent = AGENDA.dataInicio + ' a ' + AGENDA.dataFim;
+}
+
+// ===============================================================
+// NAVEGACAO ENTRE SEMANAS
+// ===============================================================
+function navegarSemana(direcao) {
+  var inicio = new Date(AGENDA.dataInicio + 'T00:00:00');
+  var fim = new Date(AGENDA.dataFim + 'T00:00:00');
+  inicio.setDate(inicio.getDate() + (7 * direcao));
+  fim.setDate(fim.getDate() + (7 * direcao));
+  AGENDA.dataInicio = formatDateISO(inicio);
+  AGENDA.dataFim = formatDateISO(fim);
+  carregarAgenda();
+}
+
+function formatDateISO(d) {
+  var mm = String(d.getMonth() + 1).padStart(2, '0');
+  var dd = String(d.getDate()).padStart(2, '0');
+  return d.getFullYear() + '-' + mm + '-' + dd;
+}
+
+// ===============================================================
+// BLOQUEIO EM MASSA
+// ===============================================================
+function bloquearPeriodo() {
+  var dataInicio = document.getElementById('blk-data-inicio').value;
+  var dataFim = document.getElementById('blk-data-fim').value;
+  var horario = document.getElementById('blk-periodo').value;
+  var motivo = document.getElementById('blk-motivo').value.trim();
+  var btn = document.getElementById('btn-bloquear');
+  var fb = document.getElementById('blk-feedback');
+
+  if (!dataInicio || !dataFim) {
+    fb.textContent = 'Selecione as datas de inicio e fim.';
+    fb.style.color = 'var(--red)';
+    return;
+  }
+
+  if (!motivo) {
+    fb.textContent = 'Informe o motivo do bloqueio.';
+    fb.style.color = 'var(--red)';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Bloqueando...';
+  fb.textContent = '';
+  fb.style.color = '';
+
+  fetch('/api/admin/bloquear', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      data_inicio: dataInicio,
+      data_fim: dataFim,
+      horario: horario || null,
+      motivo_bloqueio: motivo,
+      admin_responsavel: 'Admin'
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    btn.disabled = false;
+    btn.textContent = '🔒 Bloquear Periodo';
+    if (d.status === 'ok') {
+      mostrarToast(d.mensagem, 'success');
+      fb.textContent = d.mensagem;
+      fb.style.color = '#0E8640';
+      document.getElementById('blk-motivo').value = '';
+      carregarAgenda();
+    } else {
+      mostrarToast(d.error || 'Erro ao bloquear.', 'error');
+      fb.textContent = d.error || 'Erro.';
+      fb.style.color = 'var(--red)';
+    }
+  })
+  .catch(function(e) {
+    btn.disabled = false;
+    btn.textContent = '🔒 Bloquear Periodo';
+    mostrarToast('Erro de rede: ' + e.message, 'error');
+  });
+}
+
+// ===============================================================
+// BLOQUEAR / LIBERAR DIA ESPECIFICO
+// ===============================================================
+function bloquearDia(data) {
+  fetch('/api/admin/bloquear', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      data_inicio: data,
+      data_fim: data,
+      horario: null,
+      motivo_bloqueio: 'Bloqueio manual do dia',
+      admin_responsavel: 'Admin'
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.status === 'ok') {
+      mostrarToast('Dia ' + formatDateBr(data) + ' bloqueado.', 'success');
+      carregarAgenda();
+    } else {
+      mostrarToast(d.error || 'Erro.', 'error');
+    }
+  })
+  .catch(function(e) { mostrarToast('Erro: ' + e.message, 'error'); });
+}
+
+function liberarDia(data) {
+  // Encontra e libera todos os bloqueios do dia
+  fetch('/api/admin/agenda?data_inicio=' + data + '&data_fim=' + data)
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var bloqueios = [];
+      (d.dias || []).forEach(function(dia) {
+        (dia.slots || []).forEach(function(slot) {
+          if (slot.bloqueio_id && bloqueios.indexOf(slot.bloqueio_id) === -1) {
+            bloqueios.push(slot.bloqueio_id);
+          }
+        });
+      });
+
+      if (bloqueios.length === 0) {
+        mostrarToast('Nenhum bloqueio encontrado para ' + formatDateBr(data) + '.', 'warning');
+        return;
+      }
+
+      var promises = bloqueios.map(function(bid) {
+        return fetch('/api/admin/bloquear/' + bid, { method: 'DELETE' }).then(function(r) { return r.json(); });
+      });
+
+      Promise.all(promises).then(function() {
+        mostrarToast('Dia ' + formatDateBr(data) + ' liberado.', 'success');
+        carregarAgenda();
+      }).catch(function(e) {
+        mostrarToast('Erro ao liberar: ' + e.message, 'error');
+      });
+    });
+}
+
+function liberarBloqueio(bloqueioId) {
+  fetch('/api/admin/bloquear/' + bloqueioId, { method: 'DELETE' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.status === 'ok') {
+        mostrarToast(d.mensagem, 'success');
+        carregarAgenda();
+      } else {
+        mostrarToast(d.error || 'Erro.', 'error');
+      }
+    })
+    .catch(function(e) { mostrarToast('Erro: ' + e.message, 'error'); });
+}
+
+// ===============================================================
+// LIMPAR DIA
+// ===============================================================
+function confirmarLimparDia(data) {
+  AGENDA.acaoPendente = 'limparDia';
+  AGENDA.acaoArgs = data;
+  document.getElementById('confirmar-titulo').textContent = 'Limpar Dia';
+  document.getElementById('confirmar-mensagem').textContent = 'Todos os agendamentos do dia ' + formatDateBr(data) + ' serao cancelados e o dia sera bloqueado. Esta acao nao pode ser desfeita.';
+  document.getElementById('modal-confirmar-acao').style.display = 'flex';
+}
+
+function executarAcaoConfirmada() {
+  if (AGENDA.acaoPendente === 'limparDia') {
+    executarLimparDia(AGENDA.acaoArgs);
+  } else if (AGENDA.acaoPendente === 'cancelarAgendamento') {
+    executarCancelarAgendamento(AGENDA.acaoArgs);
+  }
+  fecharModalConfirmar();
+}
+
+function executarLimparDia(data) {
+  fetch('/api/admin/limpar-dia/' + data, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.status === 'ok') {
+        mostrarToast(d.mensagem, 'success');
+        carregarAgenda();
+      } else {
+        mostrarToast(d.error || 'Erro.', 'error');
+      }
+    })
+    .catch(function(e) { mostrarToast('Erro: ' + e.message, 'error'); });
+}
+
+// ===============================================================
+// AGENDAMENTO MANUAL
+// ===============================================================
+function abrirModalManual() {
+  document.getElementById('modal-agendar-manual').style.display = 'flex';
+  document.getElementById('manual-data').value = AGENDA.dataInicio;
+}
+
+function fecharModalManual() {
+  document.getElementById('modal-agendar-manual').style.display = 'none';
+  document.getElementById('manual-feedback').style.display = 'none';
+}
+
+function confirmarAgendamentoManual() {
+  var hashId = document.getElementById('manual-hash-id').value;
+  var data = document.getElementById('manual-data').value;
+  var periodo = document.getElementById('manual-periodo').value;
+  var obs = document.getElementById('manual-obs').value.trim();
+  var btn = document.getElementById('btn-confirmar-manual');
+  var fb = document.getElementById('manual-feedback');
+
+  if (!hashId || !data || !periodo) {
+    fb.textContent = 'Preencha todos os campos obrigatorios.';
+    fb.style.color = 'var(--red)';
+    fb.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Agendando...';
+
+  fetch('/api/admin/agendar-manual', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      hash_id: hashId,
+      data: data,
+      periodo: periodo,
+      observacoes: obs
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    btn.disabled = false;
+    btn.textContent = 'Confirmar Agendamento';
+    if (d.status === 'ok') {
+      mostrarToast(d.mensagem, 'success');
+      fecharModalManual();
+      carregarAgenda();
+    } else {
+      fb.textContent = d.error || 'Erro ao agendar.';
+      fb.style.color = 'var(--red)';
+      fb.style.display = 'block';
+    }
+  })
+  .catch(function(e) {
+    btn.disabled = false;
+    btn.textContent = 'Confirmar Agendamento';
+    fb.textContent = 'Erro: ' + e.message;
+    fb.style.color = 'var(--red)';
+    fb.style.display = 'block';
+  });
+}
+
+// ===============================================================
+// REAGENDAMENTO
+// ===============================================================
+function abrirReagendar(agendamentoId, cliente, hashId) {
+  document.getElementById('reagendar-id').value = agendamentoId;
+  document.getElementById('reagendar-info').textContent = 'Cliente: ' + cliente + ' | Protocolo: ' + hashId;
+  document.getElementById('reagendar-data').value = '';
+  document.getElementById('reagendar-periodo').value = '';
+  document.getElementById('reagendar-feedback').style.display = 'none';
+  document.getElementById('modal-reagendar').style.display = 'flex';
+}
+
+function fecharModalReagendar() {
+  document.getElementById('modal-reagendar').style.display = 'none';
+}
+
+function confirmarReagendamento() {
+  var agId = document.getElementById('reagendar-id').value;
+  var data = document.getElementById('reagendar-data').value;
+  var periodo = document.getElementById('reagendar-periodo').value;
+  var btn = document.getElementById('btn-confirmar-reagendar');
+  var fb = document.getElementById('reagendar-feedback');
+
+  if (!data || !periodo) {
+    fb.textContent = 'Selecione a nova data e periodo.';
+    fb.style.color = 'var(--red)';
+    fb.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Reagendando...';
+
+  fetch('/api/admin/agendamento/' + agId + '/reagendar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nova_data: data,
+      novo_periodo: periodo
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    btn.disabled = false;
+    btn.textContent = 'Reagendar';
+    if (d.status === 'ok') {
+      mostrarToast(d.mensagem, 'success');
+      fecharModalReagendar();
+      carregarAgenda();
+    } else {
+      fb.textContent = d.error || 'Erro.';
+      fb.style.color = 'var(--red)';
+      fb.style.display = 'block';
+    }
+  })
+  .catch(function(e) {
+    btn.disabled = false;
+    btn.textContent = 'Reagendar';
+    fb.textContent = 'Erro: ' + e.message;
+    fb.style.color = 'var(--red)';
+    fb.style.display = 'block';
+  });
+}
+
+// ===============================================================
+// CANCELAR AGENDAMENTO
+// ===============================================================
+function cancelarAgendamento(agendamentoId) {
+  AGENDA.acaoPendente = 'cancelarAgendamento';
+  AGENDA.acaoArgs = agendamentoId;
+  document.getElementById('confirmar-titulo').textContent = 'Cancelar Agendamento';
+  document.getElementById('confirmar-mensagem').textContent = 'O agendamento sera cancelado e o horario sera liberado. Deseja continuar?';
+  document.getElementById('modal-confirmar-acao').style.display = 'flex';
+}
+
+function executarCancelarAgendamento(agendamentoId) {
+  fetch('/api/admin/agendamento/' + agendamentoId, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ motivo_cancelamento: 'Cancelado pelo administrador' })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.status === 'ok') {
+      mostrarToast(d.mensagem, 'success');
+      carregarAgenda();
+    } else {
+      mostrarToast(d.error || 'Erro.', 'error');
+    }
+  })
+  .catch(function(e) { mostrarToast('Erro: ' + e.message, 'error'); });
+}
+
+// ===============================================================
+// MODAIS GENERICOS
+// ===============================================================
+function fecharModalConfirmar() {
+  document.getElementById('modal-confirmar-acao').style.display = 'none';
+  AGENDA.acaoPendente = null;
+  AGENDA.acaoArgs = null;
+}
+
+// ===============================================================
+// TOAST
+// ===============================================================
+var toastTimer = null;
+function mostrarToast(msg, tipo) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (tipo || 'success');
+  el.style.display = 'flex';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.style.display = 'none'; }, 4000);
+}
+
+// ===============================================================
+// UTILITARIOS
+// ===============================================================
+function formatDateBr(dataStr) {
+  var parts = dataStr.split('-');
+  return parts[2] + '/' + parts[1] + '/' + parts[0];
+}
+
+function gerarSlots() {
+  mostrarToast('Para gerar slots, reinicie a aplicacao. Os slots sao semeados automaticamente para os proximos 60 dias.', 'warning');
+}
+
+// ===============================================================
+// CONFIGURACAO SEMANAL DE HORARIOS
+// ===============================================================
+var CONFIG_SEMANAL = [];
+
+function carregarConfigSemanal() {
+  fetch('/api/admin/configuracao')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      CONFIG_SEMANAL = data || [];
+      renderizarConfigSemanal();
+      atualizarPeriodosBloco();
+    })
+    .catch(function(e) { console.error('Erro ao carregar config:', e); });
+}
+
+function renderizarConfigSemanal() {
+  var tbody = document.getElementById('config-tbody');
+  if (CONFIG_SEMANAL.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--gray-400)">Nenhum periodo configurado.</td></tr>';
+    return;
+  }
+
+  var html = '';
+  CONFIG_SEMANAL.forEach(function(c) {
+    var statusBadge = c.ativo
+      ? '<span class="agenda-badge" style="background:#0E8640;color:white">Ativo</span>'
+      : '<span class="agenda-badge" style="background:var(--gray-400);color:white">Inativo</span>';
+
+    html += '<tr class="' + (c.ativo ? '' : 'config-inactive') + '">';
+    html += '  <td><strong>' + c.dia_semana_nome + '</strong></td>';
+    html += '  <td><span class="config-time" id="hi-' + c.id + '">' + c.hora_inicio + '</span></td>';
+    html += '  <td><span class="config-time" id="hf-' + c.id + '">' + c.hora_fim + '</span></td>';
+    html += '  <td>' + statusBadge + '</td>';
+    html += '  <td class="config-actions">';
+    html += '    <button class="slot-action-btn" title="Editar" onclick="editarPeriodo(' + c.id + ')">Editar</button>';
+    if (c.ativo) {
+      html += '    <button class="slot-action-btn action-cancel" title="Desativar" onclick="togglePeriodo(' + c.id + ', false)">Desativar</button>';
+    } else {
+      html += '    <button class="slot-action-btn action-free" title="Ativar" onclick="togglePeriodo(' + c.id + ', true)">Ativar</button>';
+    }
+    html += '    <button class="slot-action-btn action-cancel" title="Remover" onclick="removerPeriodo(' + c.id + ')">Remover</button>';
+    html += '  </td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
+}
+
+function atualizarPeriodosBloco() {
+  // Atualiza o dropdown de periodo no painel de bloqueio com base na config
+  var sel = document.getElementById('blk-periodo');
+  var atual = sel.value;
+  sel.innerHTML = '<option value="">Dia Inteiro</option>';
+  var vistos = {};
+  CONFIG_SEMANAL.forEach(function(c) {
+    if (c.ativo && !vistos[c.hora_inicio]) {
+      vistos[c.hora_inicio] = true;
+      sel.innerHTML += '<option value="' + c.hora_inicio + '">' + c.hora_inicio + ' - ' + c.hora_fim + '</option>';
+    }
+  });
+  if (vistos[atual]) sel.value = atual;
+}
+
+function mostrarAdicionarPeriodo() {
+  document.getElementById('form-novo-periodo').style.display = 'block';
+}
+
+function adicionarPeriodo() {
+  var dia = parseInt(document.getElementById('novo-dia-semana').value);
+  var hi = document.getElementById('novo-hora-inicio').value;
+  var hf = document.getElementById('novo-hora-fim').value;
+
+  if (!hi || !hf) { mostrarToast('Preencha os horarios.', 'error'); return; }
+
+  fetch('/api/admin/configuracao', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dia_semana: dia, hora_inicio: hi + ':00' === hi ? hi : hi, hora_fim: hf })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.status === 'ok') {
+      mostrarToast('Periodo adicionado! Regenerate os slots para aplicar.', 'success');
+      document.getElementById('form-novo-periodo').style.display = 'none';
+      carregarConfigSemanal();
+    } else {
+      mostrarToast(d.error || 'Erro.', 'error');
+    }
+  })
+  .catch(function(e) { mostrarToast('Erro: ' + e.message, 'error'); });
+}
+
+function togglePeriodo(id, ativo) {
+  fetch('/api/admin/configuracao/' + id, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ativo: ativo })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.status === 'ok') {
+      mostrarToast('Periodo ' + (ativo ? 'ativado' : 'desativado') + '.', 'success');
+      carregarConfigSemanal();
+    } else {
+      mostrarToast(d.error || 'Erro.', 'error');
+    }
+  });
+}
+
+function editarPeriodo(id) {
+  var cfg = CONFIG_SEMANAL.find(function(c) { return c.id === id; });
+  if (!cfg) return;
+
+  var novoHi = prompt('Nova hora de inicio (HH:MM):', cfg.hora_inicio);
+  if (!novoHi) return;
+  var novoHf = prompt('Nova hora de fim (HH:MM):', cfg.hora_fim);
+  if (!novoHf) return;
+
+  fetch('/api/admin/configuracao/' + id, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hora_inicio: novoHi, hora_fim: novoHf })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.status === 'ok') {
+      mostrarToast('Periodo atualizado.', 'success');
+      carregarConfigSemanal();
+    } else {
+      mostrarToast(d.error || 'Erro.', 'error');
+    }
+  });
+}
+
+function removerPeriodo(id) {
+  if (!confirm('Remover este periodo da configuracao semanal?')) return;
+
+  fetch('/api/admin/configuracao/' + id, { method: 'DELETE' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.status === 'deleted') {
+        mostrarToast('Periodo removido.', 'success');
+        carregarConfigSemanal();
+      } else {
+        mostrarToast(d.error || 'Erro.', 'error');
+      }
+    });
+}
+
+function regenerarSlots() {
+  var btn = document.getElementById('btn-regenerar');
+  if (!confirm('Isso vai recriar todos os slots futuros com base na configuracao atual. Slots com agendamentos ativos serao preservados. Continuar?')) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Regenerando...';
+
+  fetch('/api/admin/regenerar-slots', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      btn.disabled = false;
+      btn.textContent = '🔄 Regenerar Slots';
+      if (d.status === 'ok') {
+        mostrarToast(d.mensagem, 'success');
+        carregarAgenda();
+      } else {
+        mostrarToast(d.error || 'Erro.', 'error');
+      }
+    })
+    .catch(function(e) {
+      btn.disabled = false;
+      btn.textContent = '🔄 Regenerar Slots';
+      mostrarToast('Erro: ' + e.message, 'error');
+    });
+}
+
+// Carrega config ao iniciar
+carregarConfigSemanal();
+
+// Fechar modais ao clicar fora
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('agenda-modal-overlay')) {
+    e.target.style.display = 'none';
+    AGENDA.acaoPendente = null;
+    AGENDA.acaoArgs = null;
+  }
+});
+</script>
+{% endblock %}

@@ -26,6 +26,11 @@ services:
         value: "62.400.020/0001-07"
       - key: WHATSAPP_NOTIFY
         value: "5519996245413"
+      - key: ADMIN_EMAIL
+        value: Dkelectrichelp@gmail.com
+      - key: ADMIN_PASSWORD
+        sync: false
+        value: Deedks123@
       - key: META_WHATSAPP_TOKEN
         sync: false
       - key: META_WHATSAPP_PHONE_ID

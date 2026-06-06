@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Login — DK Electric Help{% endblock %}
+{% block content %}
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-brand">
+      <img src="{{ url_for('static', filename='img/Logo.png') }}" alt="DK Electric Help" class="login-logo">
+      <span class="login-subtitle">Painel Administrativo</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('login', next=request.args.get('next', '')) }}" class="login-form">
+      <div class="login-field">
+        <label class="login-label" for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          class="login-input"
+          placeholder="Dkelectrichelp@gmail.com"
+          required
+          autocomplete="email"
+          autofocus
+          aria-required="true"
+        >
+      </div>
+      <div class="login-field">
+        <label class="login-label" for="senha">Senha de Acesso</label>
+        <input
+          type="password"
+          id="senha"
+          name="senha"
+          class="login-input"
+          placeholder="Digite a senha administrativa"
+          required
+          autocomplete="current-password"
+          aria-required="true"
+        >
+      </div>
+
+      {% if error %}
+      <div class="login-error" role="alert">
+        <span class="login-error-icon">!</span>
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <button type="submit" class="login-btn">
+        <span class="login-btn-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </span>
+        Acessar Painel
+      </button>
+    </form>
+
+    <div class="login-footer">
+      <span>DK Electric Help — Engenharia Elétrica</span>
+      <span>CNPJ: 62.400.020/0001-07 | (19) 99624-5413</span>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -126,6 +126,9 @@ class ItemOrcamento(db.Model):
 
 class Agendamento(db.Model):
     __tablename__ = "agendamentos"
+    __table_args__ = (
+        CheckConstraint("status IN ('CONFIRMADO', 'REAGENDADO', 'CANCELADO', 'MANUAL')"),
+    )
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     orcamento_id = db.Column(db.Integer, db.ForeignKey("orcamentos.id"), unique=True, nullable=False)
@@ -133,8 +136,15 @@ class Agendamento(db.Model):
     periodo = db.Column(db.String(20), nullable=False)
     observacoes_cliente = db.Column(db.Text)
     confirmado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default="CONFIRMADO")
+    reagendado_de = db.Column(db.Integer, db.ForeignKey("agendamentos.id"), nullable=True)
+    motivo_cancelamento = db.Column(db.Text)
+    criado_por_admin = db.Column(db.Boolean, default=False)
 
     orcamento = db.relationship("Orcamento", back_populates="agendamento")
+    reagendamento_origem = db.relationship("Agendamento", remote_side=[id], uselist=True,
+                                            foreign_keys=[reagendado_de],
+                                            backref=db.backref("reagendado_para", remote_side=[reagendado_de], uselist=False))
 
     def to_dict(self):
         return {
@@ -142,6 +152,8 @@ class Agendamento(db.Model):
             "data_agendada": self.data_agendada.isoformat(),
             "periodo": self.periodo,
             "confirmado_em": self.confirmado_em.isoformat(),
+            "status": self.status,
+            "criado_por_admin": self.criado_por_admin,
         }
 
 
@@ -159,6 +171,68 @@ class SlotHorario(db.Model):
         Index("ix_slots_data", "data"),
         UniqueConstraint("data", "hora_inicio", name="uq_slot_horario"),
     )
+
+
+class BloqueioAgenda(db.Model):
+    """Registra dias/horarios bloqueados manualmente pelo administrador."""
+    __tablename__ = "bloqueios_agenda"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    data = db.Column(db.Date, nullable=False, index=True)
+    horario = db.Column(db.Time, nullable=True)  # NULL = dia inteiro bloqueado
+    status_bloqueio = db.Column(db.String(20), default="BLOQUEADO")  # BLOQUEADO, LIBERADO
+    motivo_bloqueio = db.Column(db.Text)
+    admin_responsavel = db.Column(db.String(200))
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("ix_bloqueios_data", "data"),
+        Index("ix_bloqueios_status", "status_bloqueio"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "data": self.data.isoformat(),
+            "horario": self.horario.strftime("%H:%M") if self.horario else None,
+            "status_bloqueio": self.status_bloqueio,
+            "motivo_bloqueio": self.motivo_bloqueio,
+            "admin_responsavel": self.admin_responsavel,
+            "criado_em": self.criado_em.isoformat() if self.criado_em else None,
+        }
+
+
+class ConfiguracaoHorario(db.Model):
+    """Template semanal de horarios — define quais periodos estao ativos em cada dia da semana."""
+    __tablename__ = "configuracao_horarios"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    dia_semana = db.Column(db.Integer, nullable=False)  # 0=Seg ... 4=Sex (dias uteis)
+    hora_inicio = db.Column(db.Time, nullable=False)
+    hora_fim = db.Column(db.Time, nullable=False)
+    ativo = db.Column(db.Boolean, default=True)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("dia_semana", "hora_inicio", name="uq_config_horario"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "dia_semana": self.dia_semana,
+            "dia_semana_nome": _dia_semana_nome(self.dia_semana),
+            "hora_inicio": self.hora_inicio.strftime("%H:%M"),
+            "hora_fim": self.hora_fim.strftime("%H:%M"),
+            "ativo": self.ativo,
+        }
+
+
+def _dia_semana_nome(dia):
+    nomes = ["Segunda-feira", "Terca-feira", "Quarta-feira",
+             "Quinta-feira", "Sexta-feira", "Sabado", "Domingo"]
+    return nomes[dia] if 0 <= dia <= 6 else ""
 
 
 class NotificationLog(db.Model):
@@ -180,29 +254,89 @@ def init_db(app):
     db.init_app(app)
     with app.app_context():
         db.create_all()
+        _migrate_db(app)
+        _seed_configuracao(app)
         _seed_slots(app)
 
 
-def _seed_slots(app):
-    if SlotHorario.query.first() is not None:
+def _migrate_db(app):
+    """Adiciona colunas que nao existem em tabelas ja criadas (SQLite nao faz ALTER automatico)."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+
+    # --- agendamentos: status ---
+    cols_ag = {c["name"] for c in inspector.get_columns("agendamentos")}
+    novas_colunas_ag = {
+        "status": "VARCHAR(20) DEFAULT 'CONFIRMADO'",
+        "reagendado_de": "INTEGER REFERENCES agendamentos(id)",
+        "motivo_cancelamento": "TEXT",
+        "criado_por_admin": "BOOLEAN DEFAULT 0",
+    }
+    with db.engine.connect() as conn:
+        for col_name, col_def in novas_colunas_ag.items():
+            if col_name not in cols_ag:
+                conn.execute(text(f"ALTER TABLE agendamentos ADD COLUMN {col_name} {col_def}"))
+                app.logger.info(f"Migracao: coluna '{col_name}' adicionada em agendamentos.")
+        conn.commit()
+
+
+def _seed_configuracao(app):
+    """Cria configuracao padrao de horarios se nao existir."""
+    if ConfiguracaoHorario.query.first() is not None:
         return
-    hoje = datetime.utcnow().date()
     periodos = [
         ("08:00", "11:30"),
         ("13:00", "18:00"),
     ]
-    slots = []
-    for dia_offset in range(1, 61):
-        dia = hoje + timedelta(days=dia_offset)
-        if dia.weekday() >= 5:
-            continue
+    for dia in range(0, 5):  # Seg a Sex
         for hi, hf in periodos:
-            slots.append(
-                SlotHorario(
-                    data=dia,
-                    hora_inicio=datetime.strptime(hi, "%H:%M").time(),
-                    hora_fim=datetime.strptime(hf, "%H:%M").time(),
-                )
-            )
-    db.session.bulk_save_objects(slots)
+            db.session.add(ConfiguracaoHorario(
+                dia_semana=dia,
+                hora_inicio=datetime.strptime(hi, "%H:%M").time(),
+                hora_fim=datetime.strptime(hf, "%H:%M").time(),
+            ))
     db.session.commit()
+    app.logger.info("Configuracao de horarios padrao criada.")
+
+
+def _seed_slots(app):
+    """Gera slots futuros com base na ConfiguracaoHorario ativa."""
+    hoje = datetime.utcnow().date()
+
+    # Remove slots futuros que nao tem agendamento
+    SlotHorario.query.filter(
+        SlotHorario.data > hoje,
+        SlotHorario.agendamento_id == None,
+    ).delete()
+
+    configs = ConfiguracaoHorario.query.filter_by(ativo=True).order_by(
+        ConfiguracaoHorario.dia_semana, ConfiguracaoHorario.hora_inicio
+    ).all()
+
+    if not configs:
+        return  # sem config ativa, nao gera slots
+
+    # Agrupa periodos por dia da semana
+    periodos_por_dia = {}
+    for c in configs:
+        periodos_por_dia.setdefault(c.dia_semana, []).append((c.hora_inicio, c.hora_fim))
+
+    # Gera slots para os proximos 90 dias
+    slots = []
+    for dia_offset in range(1, 91):
+        dia = hoje + timedelta(days=dia_offset)
+        dw = dia.weekday()
+        if dw not in periodos_por_dia:
+            continue
+        for hi, hf in periodos_por_dia[dw]:
+            # Evita duplicatas
+            existe = SlotHorario.query.filter_by(data=dia, hora_inicio=hi).first()
+            if not existe:
+                slots.append(SlotHorario(data=dia, hora_inicio=hi, hora_fim=hf))
+
+    if slots:
+        db.session.bulk_save_objects(slots)
+        db.session.commit()
+        app.logger.info(f"{len(slots)} slots gerados a partir da configuracao.")
+
