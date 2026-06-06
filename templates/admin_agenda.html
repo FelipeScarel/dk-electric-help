@@ -70,9 +70,14 @@
         <input type="text" id="blk-motivo" class="agenda-input" placeholder="Ex: Servico continuo em obra — Shopping Iguatemi">
       </div>
     </div>
-    <button class="btn btn-danger btn-lg" id="btn-bloquear" onclick="bloquearPeriodo()">
-      🔒 Bloquear Periodo
-    </button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-danger btn-lg" id="btn-bloquear" onclick="bloquearPeriodo()">
+        🔒 Bloquear Periodo
+      </button>
+      <button class="btn btn-outline btn-lg" id="btn-liberar-todos" onclick="liberarTodos()">
+        🔓 Liberar Todos os Dias
+      </button>
+    </div>
     <span class="agenda-ctrl-hint" id="blk-feedback"></span>
   </div>
 
@@ -966,6 +971,32 @@ function regenerarSlots() {
     .catch(function(e) {
       btn.disabled = false;
       btn.textContent = '🔄 Regenerar Slots';
+      mostrarToast('Erro: ' + e.message, 'error');
+    });
+}
+
+function liberarTodos() {
+  if (!confirm('Isso vai liberar TODOS os dias bloqueados a partir de hoje. Slots com agendamentos ativos serao preservados. Continuar?')) return;
+
+  var btn = document.getElementById('btn-liberar-todos');
+  btn.disabled = true;
+  btn.textContent = 'Liberando...';
+
+  fetch('/api/admin/liberar-todos', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      btn.disabled = false;
+      btn.textContent = '🔓 Liberar Todos os Dias';
+      if (d.status === 'ok') {
+        mostrarToast(d.mensagem, 'success');
+        carregarAgenda();
+      } else {
+        mostrarToast(d.error || 'Erro.', 'error');
+      }
+    })
+    .catch(function(e) {
+      btn.disabled = false;
+      btn.textContent = '🔓 Liberar Todos os Dias';
       mostrarToast('Erro: ' + e.message, 'error');
     });
 }

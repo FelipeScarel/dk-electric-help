@@ -1049,6 +1049,46 @@ def admin_limpar_dia(data_str):
     })
 
 
+@app.route("/api/admin/liberar-todos", methods=["POST"])
+@login_required
+def admin_liberar_todos():
+    """Libera todos os bloqueios ativos e restaura slots nao agendados."""
+    hoje = _utcnow().date()
+
+    bloqueios = BloqueioAgenda.query.filter(
+        BloqueioAgenda.data >= hoje,
+        BloqueioAgenda.status_bloqueio == "BLOQUEADO",
+    ).all()
+
+    bloqueios_liberados = 0
+    for b in bloqueios:
+        b.status_bloqueio = "LIBERADO"
+        bloqueios_liberados += 1
+
+    db.session.flush()
+
+    # Restaura slots que nao tem agendamento
+    slots = SlotHorario.query.filter(
+        SlotHorario.data >= hoje,
+        SlotHorario.agendamento_id == None,
+    ).all()
+
+    slots_liberados = 0
+    for s in slots:
+        if not s.disponivel:
+            s.disponivel = True
+            slots_liberados += 1
+
+    db.session.commit()
+
+    return jsonify({
+        "status": "ok",
+        "bloqueios_liberados": bloqueios_liberados,
+        "slots_liberados": slots_liberados,
+        "mensagem": f"Todos os dias liberados. {bloqueios_liberados} bloqueio(s) removido(s), {slots_liberados} slot(s) restaurado(s).",
+    })
+
+
 # ---------------------------------------------------------------------------
 # ADMIN: CONFIGURACAO DE HORARIOS SEMANAIS
 # ---------------------------------------------------------------------------
