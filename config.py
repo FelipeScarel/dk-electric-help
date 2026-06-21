@@ -6,12 +6,19 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def _parse_database_url():
-    """Converte DATABASE_URL do Render (postgres://) para formato SQLAlchemy."""
+    """Converte DATABASE_URL para formato SQLAlchemy.
+    Suporte: Supabase PostgreSQL (obrigatorio em producao), SQLite local (dev).
+    Adiciona sslmode=require para conexoes Supabase/Neon automaticamente."""
     url = os.environ.get("DATABASE_URL")
     if url:
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
+        # Supabase / Neon exigem SSL. Adiciona se nao tiver query params.
+        if "postgresql" in url and "sslmode" not in url and "ssl=" not in url.lower():
+            separator = "&" if "?" in url else "?"
+            url = f"{url}{separator}sslmode=require"
         return url
+    # Fallback SQLite apenas para desenvolvimento local
     return f"sqlite:///{os.path.join(BASE_DIR, 'dk_electric.db')}"
 
 

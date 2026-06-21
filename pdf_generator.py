@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from io import BytesIO
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
@@ -369,7 +370,7 @@ def _draw_approval_page(c, y, orcamento, approval_url):
 
     c.setFont(FONT_BOLD, 11)
     c.setFillColor(WHITE)
-    c.drawCentredString(PAGE_W / 2, btn_y + btn_h / 2 - 5, "APROVAR E AGENDAR SERVICO")
+    c.drawCentredString(PAGE_W / 2, btn_y + btn_h / 2 - 5, "CONFIRMAR ORCAMENTO")
 
     c.linkURL(approval_url, (btn_x, btn_y, btn_x + btn_w, btn_y + btn_h), thickness=0, color=None)
 
@@ -377,21 +378,23 @@ def _draw_approval_page(c, y, orcamento, approval_url):
 
     c.setFont(FONT_FAMILY, 7)
     c.setFillColor(GRAY_LIGHT)
-    c.drawCentredString(PAGE_W / 2, inner_y, "Voce sera redirecionado para escolher a data do servico.")
+    c.drawCentredString(PAGE_W / 2, inner_y, "Ao confirmar, voce sera direcionado para o WhatsApp da DK Electric Help.")
     inner_y -= 13
     c.drawCentredString(PAGE_W / 2, inner_y, f"Duvidas: {Config.COMPANY_PHONE} | {Config.COMPANY_EMAIL}")
 
 
 def generate_orcamento_pdf(orcamento, output_path=None, base_url=None):
-    if output_path is None:
-        filename = f"orcamento_{orcamento.hash_id}.pdf"
-        output_path = os.path.join(Config.PDF_OUTPUT_DIR, filename)
+    """Gera o PDF do orcamento em memoria (BytesIO) e retorna os bytes.
+    Compatível com Vercel (serverless, sem disco persistente).
+    Se output_path for informado, tambem salva uma copia em disco (dev local)."""
 
     if base_url is None:
         base_url = Config.BASE_URL
     approval_url = f"{base_url}validar-orcamento?id={orcamento.hash_id}"
 
-    c = canvas.Canvas(output_path, pagesize=A4)
+    # Gera o PDF em memoria (BytesIO) — essencial para Vercel
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
     c.setTitle(f"Orcamento DK {orcamento.hash_id}")
     c.setAuthor("DK Electric Help")
     c.setSubject(f"Orcamento {orcamento.hash_id}")
@@ -436,4 +439,14 @@ def generate_orcamento_pdf(orcamento, output_path=None, base_url=None):
                         f"DK Electric Help — Engenharia Eletrica | CNPJ: {Config.COMPANY_CNPJ}")
 
     c.save()
-    return output_path
+    buffer.seek(0)
+    pdf_bytes = buffer.getvalue()
+
+    # Salva copia em disco se solicitado (dev local apenas)
+    if output_path is None:
+        output_path = os.path.join(Config.PDF_OUTPUT_DIR, f"orcamento_{orcamento.hash_id}.pdf")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, "wb") as f:
+        f.write(pdf_bytes)
+
+    return pdf_bytes

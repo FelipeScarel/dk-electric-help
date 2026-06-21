@@ -18,7 +18,7 @@
   </div>
 
   <div class="admin-header">
-    <div><h1>Orçamentos</h1><p>{{ orcamentos|length }} resultado(s)</p></div>
+    <div><h1>Orçamentos</h1><p id="result-count">{{ orcamentos|length }} resultado(s)</p></div>
     <a href="/" class="btn btn-danger">+ Novo</a>
   </div>
 
@@ -29,6 +29,12 @@
       <select id="filter-periodo" aria-label="Periodo"><option value="">Periodo</option><option value="7">7 dias</option><option value="30">30 dias</option><option value="60">60 dias</option><option value="90">90 dias</option></select>
       <span class="filter-count" id="filter-count"></span>
     </div>
+  </div>
+
+  <!-- Loading indicator -->
+  <div class="agenda-loading" id="search-loading" style="display:none">
+    <div class="skeleton" style="height:120px;border-radius:10px;margin-bottom:12px"></div>
+    <div class="skeleton" style="height:120px;border-radius:10px"></div>
   </div>
 
   {% if orcamentos %}
@@ -44,7 +50,7 @@
             <option value="PENDENTE" {% if o.status=='PENDENTE' %}selected{% endif %}>Pendente</option>
             <option value="APROVADO_PELO_CLIENTE" {% if o.status=='APROVADO_PELO_CLIENTE' %}selected{% endif %}>Aprovado</option>
             <option value="AGENDADO" {% if o.status=='AGENDADO' %}selected{% endif %}>Agendado</option>
-            <option value="CONCLUIDO" {% if o.status=='CONCLUIDO' %}selected{% endif %}>Concluido</option>
+            <option value="CONCLUIDO" {% if o.status=='CONCLUIDO' %}selected{% endif %}>Concluído</option>
             <option value="CANCELADO" {% if o.status=='CANCELADO' %}selected{% endif %}>Cancelado</option>
           </select>
           <button class="btn-icon danger" data-hash="{{ o.hash_id }}" title="Excluir" aria-label="Excluir" onclick="excluirOrcamento('{{ o.hash_id }}')">✕</button>
@@ -68,7 +74,7 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-state"><div class="empty-state-icon">📭</div><p>Nenhum orçamento gerado ainda.</p><a href="/" class="btn btn-danger btn-lg">Criar Primeiro</a></div>
+  <div class="empty-state" id="empty-state"><div class="empty-state-icon">📭</div><p>Nenhum orçamento gerado ainda.</p><a href="/" class="btn btn-danger btn-lg">Criar Primeiro</a></div>
   {% endif %}
 </div>
 
@@ -86,9 +92,296 @@
 
 {% block extra_scripts %}
 <script>
-(function(){var si=document.getElementById("admin-search"),sf=document.getElementById("filter-status"),pf=document.getElementById("filter-periodo"),ce=document.getElementById("filter-count"),cards=document.querySelectorAll(".admin-card");function af(){var t=(si.value||"").toLowerCase().trim(),s=sf.value,d=parseInt(pf.value)||0,n=new Date(),v=0;cards.forEach(function(c){var sh=true;if(t){var tx=(c.getAttribute("data-nome")||"")+" "+(c.getAttribute("data-empresa")||"")+" "+(c.getAttribute("data-cidade")||"")+" "+(c.getAttribute("data-telefone")||"")+" "+(c.getAttribute("data-hash")||"");if(tx.indexOf(t)===-1)sh=false}if(s&&c.getAttribute("data-status")!==s)sh=false;if(d>0){var ds=c.getAttribute("data-data");if(ds){var diff=(n-new Date(ds))/(86400000);if(diff>d)sh=false}}c.style.display=sh?"":"none";if(sh)v++});ce.textContent=v+" de "+cards.length}si.addEventListener("input",af);sf.addEventListener("change",af);pf.addEventListener("change",af);af()})();
-function mudarStatus(e){var h=e.getAttribute("data-hash");fetch("/api/orcamentos/"+h+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:e.value})}).then(function(r){return r.json()}).then(function(d){if(d.status==="updated"){var c=document.querySelector('.admin-card[data-hash="'+h+'"]');if(c)c.setAttribute("data-status",e.value)}}).catch(function(){})}
-document.querySelectorAll(".btn-revisao").forEach(function(b){b.addEventListener("click",function(){var h=b.getAttribute("data-hash");b.disabled=true;fetch("/api/orcamentos/"+h+"/revisao",{method:"POST",headers:{"Content-Type":"application/json"}}).then(function(r){return r.json()}).then(function(d){if(d.hash_id){location.reload()}else{alert("Erro: "+(d.error||"desconhecido"))}}).catch(function(){alert("Erro ao criar revisao.")}).finally(function(){b.disabled=false})})});
-var hpe=null;function excluirOrcamento(h){hpe=h;document.getElementById("confirm-hash").textContent=h;document.getElementById("modal-confirm").style.display="flex"}function fecharModal(){document.getElementById("modal-confirm").style.display="none";hpe=null}function confirmarExclusao(){if(!hpe)return;var h=hpe,b=document.getElementById("btn-confirmar-exclusao");b.disabled=true;b.textContent="Excluindo...";fetch("/api/orcamentos/"+h,{method:"DELETE"}).then(function(r){return r.json()}).then(function(d){if(d.status==="deleted"){var c=document.querySelector('.admin-card[data-hash="'+h+'"]');if(c){c.style.opacity="0";c.style.transform="scale(0.95)";c.style.transition="all 200ms ease";setTimeout(function(){c.remove()},250)}fecharModal();setTimeout(function(){document.querySelector(".admin-header p").textContent=document.querySelectorAll(".admin-card").length+" resultado(s)";document.getElementById("admin-search").dispatchEvent(new Event("input"))},300)}}).catch(function(){alert("Erro ao excluir.")}).finally(function(){b.disabled=false;b.textContent="Sim, Excluir"})}
+// ===============================================================
+// BUSCA SERVER-SIDE COM DEBOUNCE
+// ===============================================================
+(function(){
+  var si = document.getElementById("admin-search");
+  var sf = document.getElementById("filter-status");
+  var pf = document.getElementById("filter-periodo");
+  var ce = document.getElementById("filter-count");
+  var cardsContainer = document.getElementById("admin-cards");
+  var loading = document.getElementById("search-loading");
+  var emptyState = document.getElementById("empty-state");
+  var resultCountEl = document.getElementById("result-count");
+  var debounceTimer = null;
+
+  // Modo: "local" = filtra cards ja carregados; "server" = busca via API
+  var modo = "local";
+
+  function getCards() {
+    return document.querySelectorAll(".admin-card");
+  }
+
+  // Filtragem local (rapida, para os 50 iniciais)
+  function filtrarLocal() {
+    var t = (si.value || "").toLowerCase().trim();
+    var s = sf.value;
+    var d = parseInt(pf.value) || 0;
+    var n = new Date();
+    var v = 0;
+    var cards = getCards();
+    cards.forEach(function(c) {
+      var sh = true;
+      if (t) {
+        var tx = (c.getAttribute("data-nome") || "") + " " +
+                 (c.getAttribute("data-empresa") || "") + " " +
+                 (c.getAttribute("data-cidade") || "") + " " +
+                 (c.getAttribute("data-telefone") || "") + " " +
+                 (c.getAttribute("data-hash") || "");
+        if (tx.indexOf(t) === -1) sh = false;
+      }
+      if (s && c.getAttribute("data-status") !== s) sh = false;
+      if (d > 0) {
+        var ds = c.getAttribute("data-data");
+        if (ds) {
+          var diff = (n - new Date(ds)) / 86400000;
+          if (diff > d) sh = false;
+        }
+      }
+      c.style.display = sh ? "" : "none";
+      if (sh) v++;
+    });
+    ce.textContent = v + " de " + cards.length;
+  }
+
+  // Busca server-side (para buscar em TODOS os orcamentos, nao so nos 50)
+  function buscarServer() {
+    var t = (si.value || "").trim();
+    var s = sf.value;
+    var d = pf.value;
+
+    if (loading) loading.style.display = "block";
+    if (cardsContainer) cardsContainer.style.display = "none";
+    if (emptyState) emptyState.style.display = "none";
+
+    var params = new URLSearchParams();
+    if (t) params.set("q", t);
+    if (s) params.set("status", s);
+    if (d) params.set("dias", d);
+
+    fetch("/api/orcamentos/buscar?" + params.toString())
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (loading) loading.style.display = "none";
+
+        var resultados = data.resultados || [];
+        if (resultCountEl) resultCountEl.textContent = resultados.length + " resultado(s)";
+        ce.textContent = resultados.length + " resultados";
+
+        if (resultados.length === 0) {
+          if (cardsContainer) {
+            cardsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><p>Nenhum orçamento encontrado para "<strong>' + escapeHtml(t) + '</strong>".</p><p style="font-size:.75rem;color:var(--gray-500);margin-top:6px">A busca consulta todos os orçamentos no banco de dados.</p></div>';
+            cardsContainer.style.display = "";
+          }
+          if (resultCountEl) resultCountEl.textContent = "0 resultado(s)";
+          return;
+        }
+
+        if (emptyState) emptyState.style.display = "none";
+        if (cardsContainer) cardsContainer.style.display = "";
+
+        // Renderiza os cards a partir dos resultados da API
+        var html = "";
+        resultados.forEach(function(o) {
+          var statusOpts = ["PENDENTE","APROVADO_PELO_CLIENTE","AGENDADO","CONCLUIDO","CANCELADO"];
+          var statusLabels = {PENDENTE:"Pendente", APROVADO_PELO_CLIENTE:"Aprovado", AGENDADO:"Agendado", CONCLUIDO:"Concluído", CANCELADO:"Cancelado"};
+
+          var enderecoCompleto = o.endereco;
+          if (o.numero) enderecoCompleto += ", " + o.numero;
+          if (o.complemento) enderecoCompleto += " — " + o.complemento;
+          if (o.bairro) enderecoCompleto += " — " + o.bairro;
+
+          var cidadeCompleta = o.cidade;
+          if (o.estado) cidadeCompleta += " / " + o.estado;
+
+          var dataCriacao = new Date(o.criado_em);
+          var dataFormatada = ("0" + dataCriacao.getDate()).slice(-2) + "/" +
+                              ("0" + (dataCriacao.getMonth() + 1)).slice(-2) + "/" +
+                              dataCriacao.getFullYear() + " " +
+                              ("0" + dataCriacao.getHours()).slice(-2) + ":" +
+                              ("0" + dataCriacao.getMinutes()).slice(-2);
+
+          html += '<div class="admin-card" data-hash="' + o.hash_id + '" data-nome="' + (o.nome || "").toLowerCase() + '" data-empresa="' + (o.empresa || "").toLowerCase() + '" data-cidade="' + (o.cidade || "").toLowerCase() + '" data-telefone="' + (o.telefone || "") + '" data-status="' + o.status + '" data-data="' + o.criado_em + '">';
+          html += '  <div class="admin-card-top">';
+          html += '    <div><div class="admin-protocol">' + o.hash_id + '</div><div class="admin-date">' + dataFormatada + '</div></div>';
+          html += '    <div class="admin-card-actions">';
+          html += '      <a href="/pdf/' + o.hash_id + '" class="btn-icon" title="PDF" aria-label="Baixar PDF">📄</a>';
+          html += '      <button class="btn-icon btn-revisao" data-hash="' + o.hash_id + '" title="Revisão" aria-label="Criar revisão">📋</button>';
+          html += '      <select class="status-pill" data-hash="' + o.hash_id + '" onchange="mudarStatus(this)" aria-label="Status">';
+          statusOpts.forEach(function(st) {
+            html += '        <option value="' + st + '"' + (o.status === st ? ' selected' : '') + '>' + statusLabels[st] + '</option>';
+          });
+          html += '      </select>';
+          html += '      <button class="btn-icon danger" data-hash="' + o.hash_id + '" title="Excluir" aria-label="Excluir" onclick="excluirOrcamento(\'' + o.hash_id + '\')">✕</button>';
+          html += '    </div>';
+          html += '  </div>';
+          html += '  <div class="admin-card-body">';
+          html += '    <div class="admin-field"><span class="admin-label">Cliente</span><span class="admin-value">' + escapeHtml(o.nome) + '</span></div>';
+          html += '    <div class="admin-field"><span class="admin-label">Telefone</span><span class="admin-value">' + escapeHtml(o.telefone) + '</span></div>';
+          html += '    <div class="admin-field wide"><span class="admin-label">Endereco</span><span class="admin-value">' + escapeHtml(enderecoCompleto) + '</span></div>';
+          html += '    <div class="admin-field"><span class="admin-label">Cidade</span><span class="admin-value">' + escapeHtml(cidadeCompleta) + '</span></div>';
+          html += '    <div class="admin-field"><span class="admin-label">Validade</span><span class="admin-value">' + escapeHtml(o.data_validade) + '</span></div>';
+          html += '  </div>';
+          html += '  <div class="admin-card-footer">';
+          html += '    <div class="admin-dates">';
+          if (o.agendamento) {
+            html += '      <div class="admin-date-row"><span>Agendado</span><strong>' + o.agendamento.data + ' ' + o.agendamento.periodo + '</strong></div>';
+          }
+          html += '      <div class="admin-date-row"><span>Itens</span><strong>' + o.itens_count + '</strong></div>';
+          html += '    </div>';
+          html += '    <div class="admin-card-value">R$ ' + o.valor_total + '</div>';
+          html += '  </div>';
+          html += '</div>';
+        });
+
+        if (cardsContainer) cardsContainer.innerHTML = html;
+        // Re-bind revisao buttons
+        bindRevisaoButtons();
+      })
+      .catch(function(e) {
+        if (loading) loading.style.display = "none";
+        if (cardsContainer) cardsContainer.style.display = "";
+        console.error("Erro na busca:", e);
+        // Fallback: filtra localmente
+        filtrarLocal();
+      });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    var div = document.createElement("div");
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  // Decide se usa busca local ou server-side
+  function executarBusca() {
+    var t = (si.value || "").trim();
+    var s = sf.value;
+    var d = pf.value;
+
+    // Se tem termo de busca OU filtro de periodo (que pode excluir os 50),
+    // usa busca server-side para consultar todo o banco
+    if (t || d || s) {
+      modo = "server";
+      buscarServer();
+    } else {
+      // Sem filtros: volta ao modo local pra mostrar os 50 recentes
+      if (modo === "server") {
+        // Recarrega a pagina para restaurar os cards server-rendered
+        location.reload();
+      }
+      modo = "local";
+      filtrarLocal();
+    }
+  }
+
+  // Debounce para o input de busca (evita requisições a cada tecla)
+  function onSearchInput() {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(executarBusca, 300);
+  }
+
+  si.addEventListener("input", onSearchInput);
+  sf.addEventListener("change", executarBusca);
+  pf.addEventListener("change", executarBusca);
+
+  // Inicializa: mostra contagem local
+  filtrarLocal();
+})();
+
+// ===============================================================
+// MUDAR STATUS (com atualizacao da contagem)
+// ===============================================================
+function mudarStatus(e) {
+  var h = e.getAttribute("data-hash");
+  fetch("/api/orcamentos/" + h + "/status", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: e.value })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.status === "updated") {
+      var c = document.querySelector('.admin-card[data-hash="' + h + '"]');
+      if (c) c.setAttribute("data-status", e.value);
+      // Atualiza contagem do filtro
+      var cards = document.querySelectorAll(".admin-card");
+      var visiveis = 0;
+      cards.forEach(function(card) {
+        if (card.style.display !== "none") visiveis++;
+      });
+      document.getElementById("filter-count").textContent = visiveis + " de " + cards.length;
+    }
+  })
+  .catch(function() {});
+}
+
+// ===============================================================
+// REVISAO
+// ===============================================================
+function bindRevisaoButtons() {
+  document.querySelectorAll(".btn-revisao").forEach(function(b) {
+    b.addEventListener("click", function() {
+      var h = b.getAttribute("data-hash");
+      b.disabled = true;
+      fetch("/api/orcamentos/" + h + "/revisao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.hash_id) { location.reload(); }
+        else { alert("Erro: " + (d.error || "desconhecido")); }
+      })
+      .catch(function() { alert("Erro ao criar revisao."); })
+      .finally(function() { b.disabled = false; });
+    });
+  });
+}
+bindRevisaoButtons();
+
+// ===============================================================
+// EXCLUSAO
+// ===============================================================
+var hpe = null;
+function excluirOrcamento(h) {
+  hpe = h;
+  document.getElementById("confirm-hash").textContent = h;
+  document.getElementById("modal-confirm").style.display = "flex";
+}
+function fecharModal() {
+  document.getElementById("modal-confirm").style.display = "none";
+  hpe = null;
+}
+function confirmarExclusao() {
+  if (!hpe) return;
+  var h = hpe;
+  var b = document.getElementById("btn-confirmar-exclusao");
+  b.disabled = true;
+  b.textContent = "Excluindo...";
+  fetch("/api/orcamentos/" + h, { method: "DELETE" })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.status === "deleted") {
+        var c = document.querySelector('.admin-card[data-hash="' + h + '"]');
+        if (c) {
+          c.style.opacity = "0";
+          c.style.transform = "scale(0.95)";
+          c.style.transition = "all 200ms ease";
+          setTimeout(function() { c.remove(); }, 250);
+        }
+        fecharModal();
+        setTimeout(function() {
+          var cards = document.querySelectorAll(".admin-card");
+          document.getElementById("result-count").textContent = cards.length + " resultado(s)";
+          document.getElementById("filter-count").textContent = cards.length + " de " + cards.length;
+        }, 300);
+      }
+    })
+    .catch(function() { alert("Erro ao excluir."); })
+    .finally(function() { b.disabled = false; b.textContent = "Sim, Excluir"; });
+}
 </script>
 {% endblock %}

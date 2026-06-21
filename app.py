@@ -1,6 +1,7 @@
 import os
 import traceback
 from datetime import datetime, timedelta, timezone
+from io import BytesIO
 
 from flask import Flask, jsonify, redirect, render_template, request, send_file, session, url_for
 from sqlalchemy import func
@@ -19,7 +20,7 @@ from database import (
     init_db,
 )
 from pdf_generator import generate_orcamento_pdf
-from whatsapp_service import notify_scheduling
+from whatsapp_service import notify_approval, notify_scheduling
 
 
 def _utcnow():
@@ -132,6 +133,83 @@ def listar_orcamentos():
 
 
 # ---------------------------------------------------------------------------
+# API: BUSCAR ORCAMENTOS (server-side search por protocolo, cliente, etc.)
+# ---------------------------------------------------------------------------
+
+@app.route("/api/orcamentos/buscar")
+@login_required
+def buscar_orcamentos():
+    """Busca server-side de orcamentos por termo, status e periodo."""
+    termo = request.args.get("q", "").strip()
+    status_filtro = request.args.get("status", "").strip().upper()
+    dias = request.args.get("dias", "").strip()
+
+    query = Orcamento.query.join(Cliente)
+
+    # Filtro por termo (nome, empresa, cidade, telefone, protocolo)
+    if termo:
+        pattern = f"%{termo}%"
+        query = query.filter(
+            db.or_(
+                Cliente.nome.ilike(pattern),
+                Cliente.empresa.ilike(pattern),
+                Cliente.cidade.ilike(pattern),
+                Cliente.telefone.ilike(pattern),
+                Orcamento.hash_id.ilike(pattern),
+            )
+        )
+
+    # Filtro por status
+    if status_filtro:
+        query = query.filter(Orcamento.status == status_filtro)
+
+    # Filtro por periodo (dias)
+    if dias:
+        try:
+            dias_int = int(dias)
+            if dias_int > 0:
+                limite = _utcnow() - timedelta(days=dias_int)
+                query = query.filter(Orcamento.criado_em >= limite)
+        except ValueError:
+            pass
+
+    resultados = (
+        query
+        .order_by(Orcamento.criado_em.desc())
+        .limit(200)
+        .all()
+    )
+
+    return jsonify({
+        "resultados": [
+            {
+                "hash_id": o.hash_id,
+                "nome": o.cliente.nome,
+                "empresa": o.cliente.empresa or "",
+                "telefone": o.cliente.telefone,
+                "endereco": o.cliente.endereco,
+                "numero": o.cliente.numero or "",
+                "complemento": o.cliente.complemento or "",
+                "bairro": o.cliente.bairro or "",
+                "cidade": o.cliente.cidade,
+                "estado": o.cliente.estado or "",
+                "status": o.status,
+                "criado_em": o.criado_em.isoformat(),
+                "data_validade": o.data_validade.strftime("%d/%m/%Y"),
+                "valor_total": f"{o.valor_total:.2f}",
+                "itens_count": len(o.itens),
+                "agendamento": {
+                    "data": o.agendamento.data_agendada.strftime("%d/%m/%Y"),
+                    "periodo": o.agendamento.periodo,
+                } if o.agendamento else None,
+            }
+            for o in resultados
+        ],
+        "total": len(resultados),
+    })
+
+
+# ---------------------------------------------------------------------------
 # API: CRIAR ORCAMENTO
 # ---------------------------------------------------------------------------
 
@@ -194,8 +272,6 @@ def criar_orcamento():
     orcamento.recalcular_total()
     db.session.commit()
 
-    pdf_path = generate_orcamento_pdf(orcamento, base_url=_get_base_url())
-
     return jsonify(
         {
             "id": orcamento.id,
@@ -213,14 +289,9 @@ def criar_orcamento():
 @app.route("/pdf/<hash_id>")
 def download_pdf(hash_id):
     orcamento = Orcamento.query.filter_by(hash_id=hash_id.upper()).first_or_404()
-    pdf_filename = f"orcamento_{orcamento.hash_id}.pdf"
-    pdf_path = os.path.join(Config.PDF_OUTPUT_DIR, pdf_filename)
-
-    if not os.path.exists(pdf_path):
-        pdf_path = generate_orcamento_pdf(orcamento)
-
+    pdf_bytes = generate_orcamento_pdf(orcamento, base_url=_get_base_url())
     return send_file(
-        pdf_path,
+        BytesIO(pdf_bytes),
         mimetype="application/pdf",
         as_attachment=True,
         download_name=f"Orcamento_DK_{orcamento.hash_id}.pdf",
@@ -250,11 +321,7 @@ def validar_orcamento():
             mensagem="Este orcamento expirou. Entre em contato pelo telefone (19) 99624-5413 para renova-lo.",
         ), 410
 
-    if orcamento.status == "PENDENTE":
-        orcamento.status = "APROVADO_PELO_CLIENTE"
-        orcamento.atualizado_em = _utcnow()
-        db.session.commit()
-
+    # Ja foi agendado pelo admin — mostra confirmacao
     if orcamento.status == "AGENDADO" and orcamento.agendamento:
         return render_template(
             "confirmado.html",
@@ -262,37 +329,18 @@ def validar_orcamento():
             agendamento=orcamento.agendamento,
         )
 
-    # Exclui slots bloqueados pelo administrador
-    bloqueio_existe = (
-        db.session.query(BloqueioAgenda.id)
-        .filter(
-            BloqueioAgenda.data == SlotHorario.data,
-            db.or_(
-                BloqueioAgenda.horario == None,
-                BloqueioAgenda.horario == SlotHorario.hora_inicio,
-            ),
-            BloqueioAgenda.status_bloqueio == "BLOQUEADO",
-        )
-        .exists()
-    )
+    # Cliente aprovou agora OU ja estava aprovado e clicou de novo
+    if orcamento.status == "PENDENTE":
+        orcamento.status = "APROVADO_PELO_CLIENTE"
+        orcamento.atualizado_em = _utcnow()
+        db.session.commit()
 
-    slots_disponiveis = (
-        SlotHorario.query
-        .filter(
-            SlotHorario.disponivel == True,
-            SlotHorario.data >= _utcnow().date(),
-            ~bloqueio_existe,
-        )
-        .order_by(SlotHorario.data, SlotHorario.hora_inicio)
-        .limit(90)
-        .all()
-    )
+    # Redireciona direto para o WhatsApp com os dados do orcamento
+    numero = Config.WHATSAPP_NOTIFY.strip()
+    msg = notify_approval(orcamento)
+    whatsapp_url = f"https://api.whatsapp.com/send?phone={numero}&text={msg}"
 
-    return render_template(
-        "agendamento.html",
-        orcamento=orcamento,
-        slots=slots_disponiveis,
-    )
+    return redirect(whatsapp_url)
 
 
 # ---------------------------------------------------------------------------
@@ -472,7 +520,6 @@ def criar_revisao(hash_id):
         db.session.add(novo_item)
 
     db.session.commit()
-    generate_orcamento_pdf(revisao, base_url=_get_base_url())
 
     return jsonify(
         {
