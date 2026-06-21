@@ -22,11 +22,5 @@
       "src": "/(.*)",
       "dest": "/app.py"
     }
-  ],
-  "functions": {
-    "app.py": {
-      "maxDuration": 30,
-      "memory": 512
-    }
-  }
+  ]
 }

@@ -31,6 +31,11 @@ def _utcnow():
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # Vercel serverless: usa /tmp para PDFs (unico diretorio com permissao de escrita)
+    if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+        Config.PDF_OUTPUT_DIR = "/tmp"
+
     os.makedirs(Config.PDF_OUTPUT_DIR, exist_ok=True)
     init_db(app)
 

@@ -10,3 +10,5 @@ start.ps1
 .DS_Store
 Thumbs.db
 PyWhatKit_DB.txt
+
+.vercel
